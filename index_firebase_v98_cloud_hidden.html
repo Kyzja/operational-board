@@ -1,0 +1,6702 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Оперативна дошка позицій v75</title>
+<style>
+:root{
+  --bg:#081119;--panel:#132231;--head:#20384c;--line:#2f4b61;
+  --muted:#9eb3c4;--yellow:#f8c943;--green:#00e676;--red:#ff3d57;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#fff;font-family:Arial,sans-serif;padding:14px}
+.app{max-width:1600px;margin:auto}
+
+.live-datetime{
+  min-width:420px;
+  height:44px;
+  border:2px solid #ff4db8;
+  border-radius:14px;
+  display:flex !important;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+  font-weight:900;
+  color:#ffffff !important;
+  background:#04111f;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+
+.topbar{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+h1{margin:0 0 5px;font-size:28px}
+.sub{color:#9eb3c4;font-size:13px}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap}
+button{border:0;border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer;background:var(--yellow);color:#101820}
+button.blue{background:#244055;color:white}
+button.green{background:#00b96b;color:white}
+button.red{background:var(--red);color:white}
+button.small{font-size:12px;padding:7px 9px;margin:2px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
+.stat b{display:block;font-size:26px}
+.stat span{color:var(--muted);font-size:13px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;margin-bottom:12px;overflow:hidden}
+.pad{padding:12px}
+.hidden{display:none!important}
+input,select,textarea{width:100%;background:#0e1c27;color:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px}
+textarea{min-height:70px;resize:vertical}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--head)}
+th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:12px;text-transform:uppercase}
+tr.warn{background:rgba(248,201,67,.08)}
+tr.danger{background:rgba(255,61,87,.13)}
+.posname{font-weight:900;text-decoration:underline dotted;cursor:pointer}
+.meta{font-size:12px;color:var(--muted);margin-top:3px}
+.lamp{display:inline-block;width:21px;height:21px;border-radius:50%;vertical-align:middle;margin-right:8px;cursor:pointer;border:2px solid rgba(255,255,255,.45)}
+.online{background:var(--green);box-shadow:0 0 14px var(--green)}
+.offline{background:var(--red);box-shadow:0 0 14px var(--red)}
+.timer{color:#ffb4c0;font-weight:900;margin-left:6px}
+.badge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:900;background:#233a4f}
+.badge.green{background:rgba(0,230,118,.14);color:#8fffc5}
+.badge.red{background:rgba(255,61,87,.18);color:#ffc4cc}
+.badge.yellow{background:rgba(248,201,67,.18);color:#ffe89b}
+.actions{display:flex;gap:4px;flex-wrap:wrap}
+.action-hidden{display:none!important}
+.pages{display:flex;justify-content:space-between;align-items:center;padding:10px;border-top:1px solid var(--line)}
+.drawer-title{display:flex;justify-content:space-between;align-items:center;font-size:22px;font-weight:900;margin-bottom:10px}
+.controls{display:grid;grid-template-columns:1fr 180px 1.5fr 170px;gap:8px}
+.type-checks{display:flex;flex-wrap:wrap;gap:8px;background:#0e1c27;border:1px solid var(--line);border-radius:10px;padding:8px}
+.type-checks label{display:flex;gap:6px;align-items:center;background:#172b3b;border:1px solid var(--line);border-radius:999px;padding:7px 10px;font-weight:800;font-size:13px}
+.type-checks input{width:auto;accent-color:#f8c943}
+.form2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.form3{display:grid;grid-template-columns:140px 1fr 190px;gap:8px;margin-top:8px}
+.quick{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:8px 0}
+.quick button{background:#223c52;color:white}
+.qtywrap{position:relative}
+.stepper{position:absolute;right:5px;top:5px;display:flex;gap:4px}
+.stepper button{width:28px;height:28px;padding:0;background:#294961;color:white}
+.preview{background:#061018;border:1px solid var(--line);border-radius:12px;padding:10px;min-height:60px;line-height:1.4;font-weight:800;margin-top:8px}
+.log{max-height:520px;overflow:auto}
+.logitem{position:relative;padding:10px 48px 10px 10px;border-bottom:1px solid var(--line)}
+.logtime{font-size:12px;color:var(--muted);margin-bottom:4px}
+.logtext{font-weight:800;line-height:1.4}
+.logdel{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;padding:0;background:var(--red);color:white;font-size:18px}
+
+/* modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal-backdrop.show{display:flex}
+.modal{width:min(1100px,96vw);max-height:92vh;overflow:auto;background:#10202d;border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.6)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);background:#172b3b;position:sticky;top:0;z-index:2}
+.modal-title{font-size:24px;font-weight:900}
+.modal-body{padding:16px}
+.modal-grid{display:grid;grid-template-columns:170px 1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.section-title{font-size:18px;font-weight:900;margin:14px 0 8px;color:#f8c943}
+.person-card{background:#0e1c27;border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}
+.person-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1.5fr 1fr;gap:8px}
+.person-status-grid{display:grid;grid-template-columns:160px 1fr;gap:8px;margin-top:8px}
+.info-table{width:100%;border-collapse:collapse;margin-top:10px}
+.info-table th,.info-table td{border:1px solid var(--line);padding:8px;vertical-align:top}
+.info-table th{background:#20384c;text-transform:none;font-size:13px}
+.info-actions-right{display:flex;justify-content:flex-end;margin-bottom:10px}
+.personnel-toggle-btn{width:100%;text-align:left;background:#1a3142;color:white;margin:12px 0 8px;font-size:16px}
+.personnel-block{display:none}
+.personnel-block.show{display:block}
+.row-200 td{background:rgba(120,0,0,.35)!important;color:#ffd7d7!important}
+.row-300 td{background:rgba(255,193,7,.18)!important;color:#ffe082!important}
+.row-500 td{background:rgba(255,0,51,.28)!important;color:#ffd0d8!important}
+.empty{color:var(--muted);padding:14px}
+
+.person-transfer-row{
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  gap:8px;
+  margin-top:8px;
+  align-items:center;
+}
+.person-transfer-row select{
+  min-width:220px;
+}
+
+@media(max-width:1100px){
+
+.live-datetime{
+  display:flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+
+  min-width:420px;
+  height:44px;
+  border:2px solid #ff4db8;
+  border-radius:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+  font-weight:800;
+  color:#f4f7fb;
+  background:#04111f;
+  box-shadow:0 0 20px rgba(0,0,0,.35) inset;
+  letter-spacing:.5px;
+}
+
+.topbar{display:block}
+.top-actions{margin-top:10px}
+.stats{grid-template-columns:repeat(2,1fr)}
+.controls,.form2,.form3,.modal-grid,.person-grid,.person-status-grid{grid-template-columns:1fr}
+.quick{grid-template-columns:repeat(3,1fr)}
+}
+
+.topbar{
+  display:grid !important;
+  grid-template-columns: 1fr 420px auto !important;
+  align-items:start !important;
+  gap:14px !important;
+}
+
+.top-actions{
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  gap:8px !important;
+  justify-content:flex-end !important;
+  align-items:flex-start !important;
+  white-space:nowrap !important;
+}
+
+.top-actions button{
+  white-space:nowrap !important;
+}
+
+.live-datetime{
+  border:0 !important;
+  box-shadow:none !important;
+  background:transparent !important;
+  min-width:420px !important;
+  height:44px !important;
+  justify-content:center !important;
+}
+
+@media(max-width:1100px){
+  .topbar{
+    display:block !important;
+  }
+  .live-datetime{
+    margin:10px 0 !important;
+    min-width:0 !important;
+    width:100% !important;
+    background:#04111f !important;
+    border:1px solid #2f4b61 !important;
+  }
+  .top-actions{
+    flex-wrap:wrap !important;
+    justify-content:flex-start !important;
+  }
+}
+
+
+.logitem.pending{
+  background:rgba(255,70,70,.14);
+  border-left:4px solid #ff5c5c;
+}
+
+.logitem.approved{
+  background:rgba(0,180,90,.16);
+  border-left:4px solid #16d97a;
+}
+
+.log-actions{
+  position:absolute;
+  top:10px;
+  right:10px;
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+
+.log-actions button{
+  width:30px;
+  height:30px;
+  border-radius:50%;
+  padding:0;
+  color:#fff;
+  font-size:14px;
+  font-weight:900;
+}
+
+.log-edit{background:#2f5f95!important}
+.log-approve{background:#16b364!important}
+.log-del{background:#ff4b6a!important}
+
+.log-badge{
+  display:inline-block;
+  margin-left:8px;
+  padding:3px 7px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+}
+
+.log-badge.pending{
+  background:#ff5c5c;
+  color:#fff;
+}
+
+.log-badge.approved{
+  background:#16b364;
+  color:#fff;
+}
+
+
+.journal-filters{
+  display:flex;
+  gap:18px;
+  align-items:center;
+  flex-wrap:wrap;
+  padding:10px 12px 8px;
+  border-bottom:1px solid var(--line);
+}
+
+.toggle-line{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  font-weight:800;
+  color:#d7e7ff;
+  user-select:none;
+  cursor:pointer;
+}
+
+.toggle-line input{
+  width:18px;
+  height:18px;
+  cursor:pointer;
+  accent-color:#f8c943;
+}
+
+
+.analytics-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:16px;
+}
+
+.analytics-card{
+  background:#0e1c27;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:12px;
+}
+
+.analytics-card b{
+  display:block;
+  font-size:26px;
+  margin-bottom:4px;
+}
+
+.analytics-card span{
+  color:var(--muted);
+  font-size:13px;
+}
+
+.analytics-table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.analytics-table th,
+.analytics-table td{
+  border:1px solid var(--line);
+  padding:8px;
+  text-align:left;
+  vertical-align:top;
+}
+
+.analytics-table th{
+  background:#20384c;
+  font-size:13px;
+}
+
+.analytics-warning{
+  background:rgba(255,70,70,.14);
+}
+
+.analytics-good{
+  background:rgba(0,180,90,.12);
+}
+
+@media(max-width:900px){
+  .analytics-grid{
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+
+
+.export-report-body{
+  font-family:Arial, sans-serif;
+  background:#f4f6f8;
+  color:#111;
+  padding:24px;
+}
+
+.export-report-body h1,
+.export-report-body h2{
+  color:#0f2a3d;
+}
+
+.export-report-body table{
+  width:100%;
+  border-collapse:collapse;
+  margin:14px 0 24px;
+  background:white;
+}
+
+.export-report-body th,
+.export-report-body td{
+  border:1px solid #b8c3cf;
+  padding:8px;
+  text-align:left;
+  vertical-align:top;
+}
+
+.export-report-body th{
+  background:#dfeaf3;
+}
+
+
+.period-filters{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  padding:10px 12px;
+  border-bottom:1px solid var(--line);
+}
+
+.period-filters label{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color:#d7e7ff;
+  font-weight:800;
+}
+
+.period-filters input[type="date"]{
+  width:160px;
+  padding:8px;
+}
+
+.period-note{
+  color:var(--muted);
+  font-size:12px;
+  padding:0 12px 10px;
+}
+
+
+.period-toggle-wrap{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 12px 0;
+}
+
+.period-panel.hidden{
+  display:none;
+}
+
+
+.journal-title-toggle{
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  user-select:none;
+}
+
+.journal-title-toggle:hover{
+  color:#f8c943;
+}
+
+
+.journal-options-panel.hidden{
+  display:none!important;
+}
+
+.journal-options-panel{
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  background:rgba(10,25,37,.55);
+}
+
+.journal-title-toggle{
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  user-select:none;
+}
+
+.journal-title-toggle:hover{
+  color:#f8c943;
+}
+
+
+.journal-header-wrap{
+  padding:18px 18px 10px 18px;
+  border-bottom:1px solid rgba(120,170,220,.18);
+}
+
+.journal-options-panel{
+  margin-top:14px;
+  padding:14px 0 4px 0;
+  background:transparent;
+  border:none;
+}
+
+.period-filters{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.journal-filters{
+  display:flex;
+  align-items:center;
+  gap:24px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+
+.toggle-line{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.journal-options-panel.hidden{
+  display:none!important;
+}
+
+
+/* FIXED JOURNAL LAYOUT */
+#logPanel{
+  display:block;
+}
+
+#logPanel.hidden{
+  display:none!important;
+}
+
+.journal-top-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:16px 18px 10px 18px;
+  border-bottom:1px solid var(--line);
+}
+
+.journal-title-toggle{
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  user-select:none;
+  font-size:24px;
+  font-weight:900;
+}
+
+.journal-title-toggle:hover{
+  color:#f8c943;
+}
+
+.journal-buttons{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-shrink:0;
+}
+
+.journal-options-panel{
+  display:block;
+  padding:12px 18px 14px 18px;
+  border-bottom:1px solid var(--line);
+  background:rgba(10,25,37,.45);
+}
+
+.journal-options-panel.hidden{
+  display:none!important;
+}
+
+.period-filters{
+  display:flex!important;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  padding:0!important;
+  margin:0 0 8px 0!important;
+  border:0!important;
+}
+
+.period-note{
+  padding:0!important;
+  margin:4px 0 10px 0!important;
+}
+
+.journal-filters{
+  display:flex!important;
+  align-items:center;
+  gap:24px;
+  flex-wrap:wrap;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+}
+
+.toggle-line{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:800;
+}
+
+#log{
+  display:block;
+  width:100%;
+}
+
+
+#cardModal.show,
+#infoModal.show,
+#analyticsModal.show{
+  display:flex!important;
+  z-index:9999!important;
+}
+
+#cardModal .modal{
+  z-index:10000!important;
+}
+
+
+/* CARD MODAL HARD FIX */
+#cardModal.show{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:18px!important;
+}
+
+#cardModal .modal{
+  width:min(1180px,96vw)!important;
+  max-height:92vh!important;
+  overflow:hidden!important;
+  position:relative!important;
+}
+
+#cardModal .modal-body{
+  display:block!important;
+  padding:16px!important;
+}
+
+#cardModal .modal-grid{
+  display:grid!important;
+  grid-template-columns:170px 1fr 1fr 1fr!important;
+  gap:10px!important;
+  margin-bottom:12px!important;
+}
+
+#cardModal #personnelList{
+  display:block!important;
+  width:100%!important;
+}
+
+#cardModal .person-card{
+  display:block!important;
+  width:100%!important;
+  clear:both!important;
+  margin:10px 0!important;
+}
+
+#cardModal .person-grid{
+  display:grid!important;
+  grid-template-columns:1fr 1fr 1fr 1.5fr 1fr!important;
+  gap:8px!important;
+}
+
+#cardModal .person-status-grid{
+  display:grid!important;
+  grid-template-columns:160px 1fr!important;
+  gap:8px!important;
+  margin-top:8px!important;
+}
+
+#cardModal .person-transfer-row{
+  display:grid!important;
+  grid-template-columns:1fr auto auto!important;
+  gap:8px!important;
+  margin-top:8px!important;
+}
+
+#cardModal .modal-actions{
+  display:flex!important;
+  justify-content:flex-end!important;
+  gap:10px!important;
+  margin-top:16px!important;
+  position:static!important;
+}
+
+@media(max-width:1100px){
+  #cardModal .modal-grid,
+  #cardModal .person-grid,
+  #cardModal .person-status-grid,
+  #cardModal .person-transfer-row{
+    grid-template-columns:1fr!important;
+  }
+}
+
+
+.import-result{
+  white-space:pre-wrap;
+  background:#0e1c27;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px;
+  margin-top:10px;
+  color:#d7e7ff;
+  line-height:1.45;
+}
+
+
+.type-checks{
+  max-height:95px;
+  overflow:auto;
+}
+.type-checks label{
+  white-space:nowrap;
+}
+
+
+h1{
+  white-space:nowrap!important;
+  line-height:1.1!important;
+}
+
+
+.position-analytics-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:14px;
+}
+
+.position-analytics-card{
+  background:#0e1c27;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:12px;
+}
+
+.position-analytics-card b{
+  display:block;
+  font-size:24px;
+  margin-bottom:4px;
+}
+
+.position-analytics-card span{
+  color:var(--muted);
+  font-size:13px;
+}
+
+.position-analytics-table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.position-analytics-table th,
+.position-analytics-table td{
+  border:1px solid var(--line);
+  padding:8px;
+  text-align:left;
+  vertical-align:top;
+}
+
+.position-analytics-table th{
+  background:#20384c;
+}
+
+.position-analytics-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-bottom:10px;
+}
+
+@media(max-width:900px){
+  .position-analytics-grid{
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+
+
+#positionAnalyticsModal.show{
+  display:flex!important;
+  z-index:11000!important;
+}
+
+#positionAnalyticsModal .modal{
+  z-index:11001!important;
+}
+
+
+/* Центрування і відступи */
+.app,
+.container,
+.wrap,
+main{
+  max-width: 1480px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 22px !important;
+  padding-right: 22px !important;
+  box-sizing:border-box !important;
+}
+
+/* Таблиця не прилипає */
+.table-wrap,
+.board-wrap,
+.positions-wrap{
+  border-radius:18px !important;
+  overflow:hidden !important;
+}
+
+/* Невеликий повітряний відступ зверху */
+body{
+  padding-top:8px !important;
+}
+
+
+/* AUTH / ADMIN */
+.auth-screen{
+  position:fixed;
+  inset:0;
+  z-index:50000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,#06111b,#071b2b);
+  padding:20px;
+}
+
+.auth-screen.hidden{
+  display:none!important;
+}
+
+.auth-box{
+  width:min(440px,94vw);
+  background:#132638;
+  border:1px solid #31516a;
+  border-radius:22px;
+  padding:24px;
+  box-shadow:0 20px 80px rgba(0,0,0,.55);
+}
+
+.auth-title{
+  font-size:28px;
+  font-weight:900;
+  margin-bottom:8px;
+}
+
+.auth-subtitle{
+  color:#a7c7df;
+  margin-bottom:18px;
+  line-height:1.35;
+}
+
+.auth-box input,
+.auth-box select{
+  width:100%;
+  margin-bottom:10px;
+}
+
+.auth-error{
+  color:#ff8ca0;
+  font-weight:800;
+  min-height:22px;
+  margin:8px 0;
+}
+
+.auth-info{
+  margin-top:12px;
+  color:#a7c7df;
+  font-size:13px;
+  line-height:1.35;
+}
+
+.user-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:9px 12px;
+  border-radius:12px;
+  background:#102233;
+  border:1px solid #31516a;
+  color:#d7e7ff;
+  font-weight:900;
+}
+
+.admin-users-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr 150px auto;
+  gap:8px;
+  align-items:center;
+  margin-top:10px;
+}
+
+.admin-user-row{
+  display:grid;
+  grid-template-columns:1fr 1fr 150px auto;
+  gap:8px;
+  align-items:center;
+  padding:8px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  margin-top:8px;
+  background:#0e1c27;
+}
+
+.admin-hidden{
+  display:none!important;
+}
+
+@media(max-width:900px){
+  .admin-users-grid,
+  .admin-user-row{
+    grid-template-columns:1fr;
+  }
+}
+
+
+.admin-form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr 160px auto;
+  gap:10px;
+  align-items:center;
+  margin-bottom:14px;
+}
+
+.admin-user-row-v2{
+  display:grid;
+  grid-template-columns:1fr 160px auto auto;
+  gap:10px;
+  align-items:center;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#0e1c27;
+  margin-bottom:8px;
+}
+
+.admin-user-row-v2 b{
+  font-size:16px;
+}
+
+.admin-user-row-v2 .role-pill{
+  display:inline-block;
+  padding:5px 10px;
+  border-radius:999px;
+  background:#20384c;
+  font-weight:900;
+}
+
+@media(max-width:900px){
+  .admin-form-grid,
+  .admin-user-row-v2{
+    grid-template-columns:1fr;
+  }
+}
+
+
+#adminModal.show{
+  display:flex!important;
+  z-index:12000!important;
+}
+#adminModal .modal{
+  z-index:12001!important;
+}
+
+
+/* ADMIN MODAL FIX */
+#adminModal.show{
+  display:flex!important;
+  z-index:60000!important;
+}
+#adminModal .modal{
+  z-index:60001!important;
+  width:min(1050px,94vw)!important;
+  max-height:90vh!important;
+  overflow:auto!important;
+}
+.admin-form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr 170px auto;
+  gap:10px;
+  align-items:center;
+  margin-bottom:14px;
+}
+.admin-user-row-v2{
+  display:grid;
+  grid-template-columns:1fr 170px auto auto;
+  gap:10px;
+  align-items:center;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#0e1c27;
+  margin-bottom:8px;
+}
+@media(max-width:900px){
+  .admin-form-grid,
+  .admin-user-row-v2{
+    grid-template-columns:1fr;
+  }
+}
+
+
+#managePanel.hidden{display:none!important;}
+#managePanel{
+  display:block;
+}
+
+
+#manageModeBtn.active{
+  background:#f8c943!important;
+  color:#06111b!important;
+}
+
+.row-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.row-actions button{
+  white-space:nowrap;
+}
+
+
+
+
+/* ===== V75 CLEAN HEADER + STABLE DASHBOARD WIDTH ===== */
+:root{
+  --dashW:1280px;
+}
+
+html, body{
+  margin:0!important;
+  padding:0!important;
+  overflow-x:hidden!important;
+  background:var(--bg)!important;
+}
+
+body{
+  padding-top:12px!important;
+}
+
+.app{
+  width:min(var(--dashW), calc(100vw - 40px))!important;
+  max-width:var(--dashW)!important;
+  min-width:980px!important;
+  margin:0 auto!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+
+/* ШАПКА */
+.topbar{
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:320px 260px 1fr!important;
+  gap:18px!important;
+  align-items:start!important;
+  margin:0 0 18px 0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+
+.title-block{
+  min-height:44px!important;
+  display:flex!important;
+  align-items:center!important;
+}
+
+.title-block h1,
+h1{
+  margin:0!important;
+  padding:0!important;
+  font-size:28px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+  text-align:left!important;
+}
+
+.live-datetime{
+  width:260px!important;
+  min-width:260px!important;
+  height:44px!important;
+  margin:0!important;
+  padding:0!important;
+
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+
+  font-size:22px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  letter-spacing:.2px!important;
+
+  color:#fff!important;
+  background:#0c1823!important;
+  border:1px solid #2f4b61!important;
+  border-radius:14px!important;
+  box-shadow:none!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+
+.top-actions{
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+
+  display:grid!important;
+  grid-template-columns:1fr 155px!important;
+  gap:10px!important;
+  align-items:start!important;
+}
+
+.top-actions-row{
+  width:100%!important;
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+  justify-content:flex-end!important;
+  align-items:center!important;
+  margin:0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+
+.top-actions-side{
+  width:155px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+  align-items:stretch!important;
+  margin:0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+
+.top-actions-row button,
+.top-actions-side button,
+.top-actions-row .user-badge{
+  height:36px!important;
+  min-height:36px!important;
+  padding:0 13px!important;
+  margin:0!important;
+
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+
+  white-space:nowrap!important;
+  flex:0 0 auto!important;
+  line-height:1!important;
+}
+
+.top-actions-side button{
+  width:155px!important;
+}
+
+.user-badge{
+  max-width:165px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+/* Основні блоки однакової ширини */
+.stats,
+.panel,
+.table-wrap{
+  width:100%!important;
+  max-width:100%!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  box-sizing:border-box!important;
+}
+
+.stats{
+  display:grid!important;
+  grid-template-columns:repeat(5, 1fr)!important;
+  gap:10px!important;
+  margin:0 0 12px 0!important;
+}
+
+.panel{
+  border-radius:16px!important;
+  overflow:hidden!important;
+}
+
+/* Гасимо старі класи, які ламали шапку */
+.header,
+.top-row,
+.actions,
+.header-actions,
+.right-vertical-actions,
+.admin-side-actions,
+.main-actions-line,
+.service-actions-row{
+  all:unset!important;
+}
+
+@media(max-width:1200px){
+  .app{
+    width:calc(100vw - 24px)!important;
+    min-width:0!important;
+  }
+
+  .topbar{
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+
+  .live-datetime{
+    width:100%!important;
+    min-width:0!important;
+    justify-self:stretch!important;
+  }
+
+  .top-actions{
+    grid-template-columns:1fr!important;
+  }
+
+  .top-actions-row{
+    justify-content:flex-start!important;
+  }
+
+  .top-actions-side{
+    width:100%!important;
+    flex-direction:row!important;
+    flex-wrap:wrap!important;
+  }
+
+  .top-actions-side button{
+    width:auto!important;
+  }
+
+  .stats{
+    grid-template-columns:repeat(2, 1fr)!important;
+  }
+}
+
+@media(max-width:600px){
+  .stats{
+    grid-template-columns:1fr!important;
+  }
+}
+
+
+
+/* ===== V76 PROGRAMMATIC HEADER + RIGHT SIDEBAR FIX ===== */
+:root{
+  --dashW: 1500px;
+  --sideW: 174px;
+  --gapW: 18px;
+}
+
+html, body{
+  overflow-x:hidden!important;
+}
+
+body{
+  padding:12px 0 18px 0!important;
+}
+
+.app{
+  width:min(var(--dashW), calc(100vw - 56px))!important;
+  max-width:var(--dashW)!important;
+  min-width:0!important;
+  margin:0 auto!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+
+/* top header: title / time / only three main controls */
+.topbar{
+  display:grid!important;
+  grid-template-columns:minmax(310px,1fr) 330px auto!important;
+  gap:18px!important;
+  align-items:start!important;
+  width:100%!important;
+  margin:0 0 16px 0!important;
+  padding:0!important;
+}
+
+.title-block{
+  min-width:0!important;
+  height:46px!important;
+  display:flex!important;
+  align-items:center!important;
+}
+
+.title-block h1,
+h1{
+  margin:0!important;
+  padding:0!important;
+  font-size:28px!important;
+  line-height:1.05!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+.live-datetime{
+  width:330px!important;
+  min-width:330px!important;
+  height:46px!important;
+  padding:0 18px!important;
+  margin:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  box-sizing:border-box!important;
+  border:1px solid #31516a!important;
+  border-radius:14px!important;
+  background:#081725!important;
+  box-shadow:0 0 0 1px rgba(255,77,184,.28) inset!important;
+  color:#fff!important;
+  font-size:22px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  letter-spacing:.2px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+}
+
+.top-actions{
+  display:flex!important;
+  justify-content:flex-end!important;
+  align-items:flex-start!important;
+  width:auto!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+}
+
+.top-actions-row{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:8px!important;
+  justify-content:flex-end!important;
+  align-items:center!important;
+  width:auto!important;
+  margin:0!important;
+  padding:0!important;
+}
+
+.top-actions-row button,
+.top-actions-row .user-badge{
+  height:36px!important;
+  min-height:36px!important;
+  padding:0 14px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border-radius:10px!important;
+  white-space:nowrap!important;
+  flex:0 0 auto!important;
+  font-size:13px!important;
+}
+
+.top-actions-row button[onclick*="openCreateModal"]{
+  background:var(--yellow)!important;
+  color:#101820!important;
+}
+
+.top-actions-row button.green{
+  background:#00b96b!important;
+  color:#fff!important;
+}
+
+.user-badge{
+  max-width:160px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+/* main area: content + vertical controls beside the form/table */
+.dashboard-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) var(--sideW)!important;
+  gap:var(--gapW)!important;
+  align-items:start!important;
+  width:100%!important;
+}
+
+.dashboard-content{
+  min-width:0!important;
+  width:100%!important;
+}
+
+.dashboard-sidebar{
+  width:var(--sideW)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:10px!important;
+  position:sticky!important;
+  top:12px!important;
+  align-self:start!important;
+  padding-top:0!important;
+}
+
+.dashboard-sidebar .side-btn{
+  width:100%!important;
+  min-height:58px!important;
+  padding:10px 12px!important;
+  border-radius:12px!important;
+  background:#173047!important;
+  color:#fff!important;
+  border:1px solid #31516a!important;
+  box-shadow:0 10px 24px rgba(0,0,0,.18)!important;
+  font-weight:900!important;
+  font-size:14px!important;
+  line-height:1.15!important;
+  white-space:normal!important;
+  text-align:center!important;
+}
+
+.dashboard-sidebar .side-btn:hover{
+  filter:brightness(1.12)!important;
+}
+
+/* keep table/stat blocks only inside left content */
+.dashboard-content .stats{
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:repeat(5, minmax(0,1fr))!important;
+  gap:10px!important;
+  margin:0 0 12px 0!important;
+}
+
+.dashboard-content .panel,
+.dashboard-content .table-wrap{
+  width:100%!important;
+  max-width:100%!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  box-sizing:border-box!important;
+}
+
+/* old right/top action layouts must not interfere */
+.top-actions-side,
+.right-vertical-actions,
+.admin-side-actions,
+.main-actions-line,
+.service-actions-row,
+.header-actions,
+.actions{
+  all:unset!important;
+}
+
+@media(max-width:1250px){
+  .app{
+    width:calc(100vw - 28px)!important;
+  }
+  .topbar{
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+  .live-datetime{
+    justify-self:start!important;
+    width:330px!important;
+  }
+  .top-actions{
+    justify-content:flex-start!important;
+  }
+  .top-actions-row{
+    flex-wrap:wrap!important;
+    justify-content:flex-start!important;
+  }
+  .dashboard-grid{
+    grid-template-columns:1fr!important;
+  }
+  .dashboard-sidebar{
+    position:static!important;
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:repeat(5, minmax(120px,1fr))!important;
+    order:-1!important;
+  }
+  .dashboard-sidebar .side-btn{
+    min-height:44px!important;
+  }
+  .dashboard-content .stats{
+    grid-template-columns:repeat(2, minmax(0,1fr))!important;
+  }
+}
+
+@media(max-width:700px){
+  .live-datetime{
+    width:100%!important;
+    min-width:0!important;
+    font-size:20px!important;
+  }
+  .dashboard-sidebar{
+    grid-template-columns:1fr!important;
+  }
+  .dashboard-content .stats{
+    grid-template-columns:1fr!important;
+  }
+}
+
+
+
+/* ===== V78 LOOK LIKE PROVIDED SCREENSHOT ===== */
+:root{
+  --dashW: 1540px!important;
+  --sideW: 188px!important;
+  --gapW: 26px!important;
+  --bg:#06111a!important;
+  --panel:#0d2131!important;
+  --head:#183247!important;
+  --line:#24465e!important;
+  --yellow:#ffc83d!important;
+  --green:#00b96b!important;
+  --red:#ff304a!important;
+}
+html,body{background:radial-gradient(circle at 45% -10%,#112d3f 0,#07131d 44%,#020a11 100%)!important;}
+body{padding:20px 0 18px!important;color:#f6fbff!important;}
+.app{width:min(var(--dashW), calc(100vw - 48px))!important;max-width:var(--dashW)!important;min-width:1180px!important;}
+.topbar{display:grid!important;grid-template-columns:minmax(360px,1fr) 330px auto!important;gap:26px!important;align-items:center!important;margin-bottom:26px!important;}
+.title-block h1,h1{font-size:34px!important;line-height:1.05!important;letter-spacing:-.6px!important;text-shadow:0 2px 18px rgba(0,0,0,.45)!important;}
+.live-datetime{width:330px!important;min-width:330px!important;height:52px!important;border:1.5px solid #ff76bd!important;border-radius:12px!important;background:rgba(9,22,34,.88)!important;box-shadow:0 0 0 1px rgba(255,118,189,.12), inset 0 0 22px rgba(255,118,189,.04)!important;font-size:28px!important;font-weight:900!important;letter-spacing:.3px!important;}
+.top-actions{display:block!important;width:auto!important;}
+.top-actions-row{display:flex!important;justify-content:flex-end!important;align-items:center!important;gap:10px!important;flex-wrap:nowrap!important;}
+.visually-hidden-badge{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;}
+.top-actions-row button{height:52px!important;border-radius:10px!important;padding:0 18px!important;font-size:15px!important;font-weight:900!important;box-shadow:0 8px 18px rgba(0,0,0,.22)!important;}
+#logoutBtn{min-width:166px!important;background:#0d2436!important;border:1px solid #2a5572!important;color:#fff!important;}
+#createCardBtn{min-width:200px!important;background:linear-gradient(180deg,#ffd34a,#ffc236)!important;color:#101820!important;}
+#topEventBtn{min-width:114px!important;background:linear-gradient(180deg,#05bd76,#009d5b)!important;color:white!important;}
+.top-icon-btn::before,.side-btn::before{display:inline-flex!important;align-items:center!important;justify-content:center!important;margin-right:9px!important;font-size:23px!important;line-height:1!important;font-weight:900!important;}
+.icon-plus::before{content:'+'!important;font-size:27px!important;}
+.icon-admin::before{content:'▧'!important;font-size:24px!important;}
+.icon-close::before{content:'×'!important;font-size:42px!important;font-weight:500!important;}
+.icon-filter::before{content:'▾'!important;transform:rotate(90deg);font-size:32px!important;}
+.icon-book::before{content:'▮'!important;font-size:30px!important;box-shadow:9px 0 0 currentColor!important;margin-right:20px!important;}
+.icon-chart::before{content:'▂▅▇'!important;font-size:24px!important;letter-spacing:1px!important;}
+.icon-shield::before{content:'⬟'!important;font-size:28px!important;}
+.dashboard-grid{grid-template-columns:minmax(0,1fr) var(--sideW)!important;gap:var(--gapW)!important;align-items:start!important;}
+.dashboard-content{min-width:0!important;}
+.dashboard-sidebar{width:var(--sideW)!important;min-width:var(--sideW)!important;gap:18px!important;top:20px!important;}
+.dashboard-sidebar .side-btn,.dashboard-sidebar button{min-height:78px!important;border-radius:10px!important;background:linear-gradient(145deg,#112e43,#0b1b2a)!important;border:1px solid #2d5874!important;color:#fff!important;box-shadow:0 12px 25px rgba(0,0,0,.23), inset 0 0 24px rgba(59,130,170,.06)!important;font-size:16px!important;justify-content:flex-start!important;text-align:left!important;padding:0 20px!important;}
+#manageModeBtn.active{min-height:84px!important;background:linear-gradient(180deg,#ffd64b,#ffc232)!important;color:#101820!important;border-color:#ffc232!important;}
+.stats{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:16px!important;margin-bottom:16px!important;}
+.stat{height:100px!important;border-radius:10px!important;background:linear-gradient(145deg,rgba(24,56,78,.92),rgba(10,26,40,.92))!important;border:1px solid #274d67!important;padding:20px 20px!important;box-shadow:inset 0 0 38px rgba(69,143,190,.08)!important;}
+.stat b{font-size:34px!important;line-height:1!important;margin-bottom:10px!important;}
+.stat span{font-size:16px!important;color:#c9d8e2!important;}
+.panel{border-radius:8px!important;background:rgba(11,31,46,.94)!important;border:1px solid #284c64!important;box-shadow:0 12px 30px rgba(0,0,0,.20)!important;}
+.table-wrap{overflow:visible!important;border-radius:8px!important;}
+table{table-layout:fixed!important;width:100%!important;}
+thead{background:linear-gradient(180deg,#183a53,#12283a)!important;}
+th{height:46px!important;font-size:14px!important;letter-spacing:-.2px!important;color:#fff!important;padding:10px 16px!important;}
+td{height:66px!important;padding:12px 16px!important;font-size:16px!important;color:#fff!important;border-bottom:1px solid rgba(64,103,127,.48)!important;}
+.posname{font-size:18px!important;text-decoration:none!important;letter-spacing:-.2px!important;}
+.meta{font-size:14px!important;color:#9db3c3!important;margin-top:4px!important;}
+.lamp{width:20px!important;height:20px!important;margin-right:10px!important;border:1px solid rgba(255,255,255,.75)!important;}
+.badge{font-size:12px!important;padding:6px 10px!important;}
+.timer{font-weight:900!important;color:#ffb5c2!important;}
+thead th:nth-child(1),tbody td:nth-child(1){width:11%!important;}
+thead th:nth-child(2),tbody td:nth-child(2){width:16%!important;}
+thead th:nth-child(3),tbody td:nth-child(3){width:17%!important;}
+thead th:nth-child(4),tbody td:nth-child(4){width:10%!important;}
+thead th:nth-child(5),tbody td:nth-child(5){width:7%!important;text-align:center!important;}
+thead th:nth-child(6),tbody td:nth-child(6){width:21%!important;}
+thead th:nth-child(7),tbody td:nth-child(7){width:300px!important;min-width:300px!important;}
+#actionHeader{text-align:center!important;}
+.row-actions{display:grid!important;grid-template-columns:80px 80px 76px 34px!important;gap:8px!important;align-items:center!important;justify-content:end!important;width:100%!important;max-width:286px!important;margin:0 0 0 auto!important;}
+.row-actions button{height:34px!important;border-radius:6px!important;padding:0 8px!important;font-size:12px!important;line-height:1!important;box-shadow:0 6px 12px rgba(0,0,0,.25)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important;}
+.row-actions button:last-child{width:34px!important;min-width:34px!important;padding:0!important;font-size:0!important;}
+.row-actions button:last-child::before{content:'🗑';font-size:17px!important;line-height:1!important;}
+.row-actions button:nth-child(1)::before{content:'✎ ';font-size:14px!important;}
+.row-actions button:nth-child(2)::before{content:'◉ ';font-size:14px!important;}
+.row-actions button:nth-child(3)::before{content:'↻ ';font-size:16px!important;}
+.pages{display:none!important;}
+footer,.footer{color:#a7b6c1!important;}
+@media(max-width:1250px){.app{width:calc(100vw - 24px)!important;min-width:0!important}.topbar{grid-template-columns:1fr!important;gap:12px!important}.live-datetime{width:100%!important;min-width:0!important;max-width:330px!important}.top-actions-row{justify-content:flex-start!important;flex-wrap:wrap!important}.dashboard-grid{grid-template-columns:1fr!important}.dashboard-sidebar{position:static!important;width:100%!important;min-width:0!important;display:grid!important;grid-template-columns:repeat(5,minmax(120px,1fr))!important}.dashboard-sidebar .side-btn,.dashboard-sidebar button{min-height:56px!important}.stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}.table-wrap{overflow:auto!important}table{min-width:1120px!important}}
+@media(max-width:700px){.stats{grid-template-columns:1fr!important}.dashboard-sidebar{grid-template-columns:1fr!important}.title-block h1,h1{font-size:28px!important}.live-datetime{font-size:22px!important}.top-actions-row button{width:100%!important}}
+
+
+/* ===== V81: EVENT + JOURNAL AS POPUP MODALS ===== */
+#floatBackdrop{
+  position:fixed!important;
+  inset:0!important;
+  z-index:29990!important;
+  background:rgba(0,0,0,.68)!important;
+  backdrop-filter:blur(4px)!important;
+}
+#floatBackdrop.hidden{display:none!important;}
+
+#eventPanel.panel,
+#logPanel.panel{
+  transition:none!important;
+}
+
+#eventPanel.panel:not(.hidden),
+#logPanel.panel:not(.hidden){
+  display:block!important;
+  position:fixed!important;
+  left:50%!important;
+  top:50%!important;
+  transform:translate(-50%,-50%)!important;
+  z-index:30000!important;
+  width:min(760px, calc(100vw - 36px))!important;
+  max-height:88vh!important;
+  overflow:auto!important;
+  margin:0!important;
+  border-radius:18px!important;
+  border:1px solid #31516a!important;
+  background:linear-gradient(145deg,#0b1a26,#102638)!important;
+  box-shadow:0 24px 90px rgba(0,0,0,.72), 0 0 0 1px rgba(255,255,255,.04) inset!important;
+}
+
+#eventPanel .drawer-title,
+#logPanel .journal-top-row{
+  position:sticky!important;
+  top:0!important;
+  z-index:2!important;
+  background:linear-gradient(145deg,#102638,#0d2030)!important;
+  border-bottom:1px solid #31516a!important;
+}
+
+#eventPanel .drawer-title{
+  margin:-12px -12px 12px -12px!important;
+  padding:14px 16px!important;
+}
+
+#eventPanel .drawer-title button.red.small,
+#logPanel .journal-buttons button.red.small:last-child{
+  width:30px!important;
+  height:30px!important;
+  min-width:30px!important;
+  padding:0!important;
+  border-radius:9px!important;
+  font-size:18px!important;
+  line-height:1!important;
+}
+
+#eventPanel .form2{
+  grid-template-columns:1fr 1fr!important;
+}
+
+#eventPanel .quick{
+  grid-template-columns:repeat(6,1fr)!important;
+}
+
+#eventPanel .form3{
+  grid-template-columns:125px 1fr 175px!important;
+}
+
+#eventPanel button[onclick="addEvent()"]{
+  height:46px!important;
+  border-radius:10px!important;
+  font-size:14px!important;
+}
+
+#logPanel.panel:not(.hidden){
+  width:min(940px, calc(100vw - 36px))!important;
+}
+
+#logPanel #log{
+  max-height:62vh!important;
+  overflow:auto!important;
+}
+
+#logPanel .journal-top-row{
+  padding:14px 16px!important;
+}
+
+#logPanel .journal-options-panel{
+  padding:12px 16px 14px 16px!important;
+}
+
+body.modal-open{
+  overflow:hidden!important;
+}
+
+@media(max-width:720px){
+  #eventPanel.panel:not(.hidden),
+  #logPanel.panel:not(.hidden){
+    width:calc(100vw - 18px)!important;
+    max-height:92vh!important;
+  }
+  #eventPanel .form2,
+  #eventPanel .form3,
+  #eventPanel .quick{
+    grid-template-columns:1fr!important;
+  }
+}
+
+
+.icon-import::before{
+  content:"⬆";
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-right:8px;
+  font-size:17px;
+  line-height:1;
+}
+@media(max-width:1250px){
+  #importExcelBtn{order:4;}
+}
+
+/* ===== V85 CLEAN DATE/TIME BLOCK ===== */
+.live-datetime,
+#liveDateTime{
+  width:auto!important;
+  min-width:310px!important;
+  height:52px!important;
+  padding:0 24px!important;
+  margin:0!important;
+
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+
+  color:#ffffff!important;
+  font-size:24px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  letter-spacing:.4px!important;
+  white-space:nowrap!important;
+
+  background:linear-gradient(180deg, rgba(20,45,64,.96), rgba(9,24,36,.96))!important;
+  border:1px solid rgba(89,137,168,.72)!important;
+  border-radius:13px!important;
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.28),
+    inset 0 1px 0 rgba(255,255,255,.08)!important;
+
+  outline:none!important;
+}
+
+/* прибирає рожеву рамку, якщо браузер/старий CSS додає focus або box-shadow */
+.live-datetime:focus,
+#liveDateTime:focus,
+.live-datetime:focus-visible,
+#liveDateTime:focus-visible{
+  outline:none!important;
+  border-color:rgba(89,137,168,.72)!important;
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.28),
+    inset 0 1px 0 rgba(255,255,255,.08)!important;
+}
+
+.topbar{
+  align-items:start!important;
+}
+
+@media(max-width:900px){
+  .live-datetime,
+  #liveDateTime{
+    width:100%!important;
+    min-width:0!important;
+    font-size:20px!important;
+    padding:0 14px!important;
+  }
+}
+
+
+/* ===== V86 ANALYTICS MODAL FIX ===== */
+
+#analyticsModal .modal{
+  width:min(1500px,96vw)!important;
+  max-width:1500px!important;
+  height:min(92vh,1200px)!important;
+  max-height:92vh!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+
+#analyticsModal .modal-body{
+  flex:1!important;
+  overflow:auto!important;
+  padding:18px!important;
+}
+
+#analyticsBody{
+  width:100%!important;
+  overflow-x:hidden!important;
+}
+
+.analytics-grid{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(180px,1fr))!important;
+  gap:12px!important;
+  margin-bottom:18px!important;
+}
+
+.analytics-card{
+  min-width:0!important;
+}
+
+.analytics-table{
+  width:100%!important;
+  table-layout:fixed!important;
+  border-collapse:collapse!important;
+}
+
+.analytics-table th,
+.analytics-table td{
+  word-break:break-word!important;
+  overflow-wrap:anywhere!important;
+  white-space:normal!important;
+  font-size:13px!important;
+  line-height:1.35!important;
+  padding:10px 8px!important;
+}
+
+.analytics-table th:nth-child(1),
+.analytics-table td:nth-child(1){
+  width:170px!important;
+}
+
+.analytics-table th:nth-child(2),
+.analytics-table td:nth-child(2){
+  width:110px!important;
+}
+
+.analytics-table th:nth-child(3),
+.analytics-table td:nth-child(3){
+  width:120px!important;
+}
+
+.analytics-table th:nth-child(4),
+.analytics-table td:nth-child(4){
+  width:80px!important;
+  text-align:center!important;
+}
+
+.analytics-table th:nth-child(5),
+.analytics-table td:nth-child(5),
+.analytics-table th:nth-child(6),
+.analytics-table td:nth-child(6),
+.analytics-table th:nth-child(7),
+.analytics-table td:nth-child(7),
+.analytics-table th:nth-child(8),
+.analytics-table td:nth-child(8),
+.analytics-table th:nth-child(9),
+.analytics-table td:nth-child(9){
+  width:90px!important;
+  text-align:center!important;
+}
+
+@media(max-width:1200px){
+  .analytics-grid{
+    grid-template-columns:repeat(2,minmax(180px,1fr))!important;
+  }
+}
+
+@media(max-width:760px){
+  .analytics-grid{
+    grid-template-columns:1fr!important;
+  }
+
+  #analyticsModal .modal{
+    width:98vw!important;
+    height:95vh!important;
+  }
+
+  .analytics-table{
+    font-size:12px!important;
+  }
+}
+
+
+/* ===== V87 POSITION INFO MODAL READABILITY FIX ===== */
+
+#infoModal .modal{
+  width:min(1520px,96vw)!important;
+  max-width:1520px!important;
+  height:min(92vh,1180px)!important;
+  max-height:92vh!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+
+#infoModal .modal-head{
+  flex:0 0 auto!important;
+}
+
+#infoModal .modal-body,
+#infoBody{
+  flex:1!important;
+  overflow:auto!important;
+  padding:18px!important;
+}
+
+#infoBody .info-actions-right{
+  position:sticky!important;
+  top:0!important;
+  z-index:3!important;
+  background:#10202d!important;
+  padding:0 0 12px 0!important;
+}
+
+#infoBody .personnel-toggle-btn{
+  margin:14px 0!important;
+  padding:14px 16px!important;
+  border-radius:10px!important;
+  font-size:16px!important;
+  text-align:left!important;
+}
+
+#infoBody .info-table{
+  width:100%!important;
+  min-width:1180px!important;
+  table-layout:fixed!important;
+  border-collapse:collapse!important;
+}
+
+#infoBody .info-table th,
+#infoBody .info-table td{
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:break-word!important;
+  hyphens:auto!important;
+  line-height:1.35!important;
+  font-size:14px!important;
+  vertical-align:top!important;
+  padding:12px 14px!important;
+}
+
+#infoBody .info-table th:nth-child(1),
+#infoBody .info-table td:nth-child(1){
+  width:170px!important;
+}
+
+#infoBody .info-table th:nth-child(2),
+#infoBody .info-table td:nth-child(2){
+  width:340px!important;
+}
+
+#infoBody .info-table th:nth-child(3),
+#infoBody .info-table td:nth-child(3){
+  width:150px!important;
+}
+
+#infoBody .info-table th:nth-child(4),
+#infoBody .info-table td:nth-child(4){
+  width:260px!important;
+}
+
+#infoBody .info-table th:nth-child(5),
+#infoBody .info-table td:nth-child(5){
+  width:150px!important;
+}
+
+#infoBody .info-table th:nth-child(6),
+#infoBody .info-table td:nth-child(6){
+  width:240px!important;
+}
+
+#infoBody .info-table td{
+  background:rgba(12,31,45,.88)!important;
+}
+
+#infoBody .info-table tr:hover td{
+  background:rgba(20,50,72,.96)!important;
+}
+
+#infoTitle{
+  max-width:calc(100% - 70px)!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+
+@media(max-width:900px){
+  #infoModal .modal{
+    width:98vw!important;
+    height:95vh!important;
+  }
+
+  #infoBody .info-table{
+    min-width:1050px!important;
+  }
+}
+
+
+/* ===== V88 POSITION ANALYTICS READABILITY FIX ===== */
+
+#positionAnalyticsModal .modal{
+  width:min(1520px,96vw)!important;
+  max-width:1520px!important;
+  height:min(92vh,1180px)!important;
+  max-height:92vh!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+
+#positionAnalyticsModal .modal-head{
+  flex:0 0 auto!important;
+}
+
+#positionAnalyticsModal .modal-body,
+#positionAnalyticsBody{
+  flex:1!important;
+  overflow:auto!important;
+  padding:18px!important;
+}
+
+#positionAnalyticsBody{
+  width:100%!important;
+}
+
+#positionAnalyticsBody .position-analytics-grid{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(190px,1fr))!important;
+  gap:12px!important;
+  margin-bottom:18px!important;
+}
+
+#positionAnalyticsBody .position-analytics-card{
+  min-width:0!important;
+  padding:14px!important;
+}
+
+#positionAnalyticsBody .position-analytics-card b{
+  font-size:24px!important;
+  line-height:1.1!important;
+  word-break:break-word!important;
+}
+
+#positionAnalyticsBody .position-analytics-card span{
+  font-size:13px!important;
+  line-height:1.3!important;
+}
+
+#positionAnalyticsBody .position-analytics-table,
+#positionAnalyticsBody .info-table{
+  width:100%!important;
+  table-layout:fixed!important;
+  border-collapse:collapse!important;
+}
+
+#positionAnalyticsBody .position-analytics-table th,
+#positionAnalyticsBody .position-analytics-table td,
+#positionAnalyticsBody .info-table th,
+#positionAnalyticsBody .info-table td{
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:break-word!important;
+  hyphens:auto!important;
+  line-height:1.35!important;
+  font-size:14px!important;
+  vertical-align:top!important;
+  padding:12px 14px!important;
+}
+
+#positionAnalyticsBody .position-analytics-table th,
+#positionAnalyticsBody .info-table th{
+  background:#20384c!important;
+}
+
+#positionAnalyticsBody .info-table{
+  min-width:1180px!important;
+}
+
+#positionAnalyticsBody .info-table th:nth-child(1),
+#positionAnalyticsBody .info-table td:nth-child(1){
+  width:170px!important;
+}
+
+#positionAnalyticsBody .info-table th:nth-child(2),
+#positionAnalyticsBody .info-table td:nth-child(2){
+  width:340px!important;
+}
+
+#positionAnalyticsBody .info-table th:nth-child(3),
+#positionAnalyticsBody .info-table td:nth-child(3){
+  width:150px!important;
+}
+
+#positionAnalyticsBody .info-table th:nth-child(4),
+#positionAnalyticsBody .info-table td:nth-child(4){
+  width:260px!important;
+}
+
+#positionAnalyticsBody .info-table th:nth-child(5),
+#positionAnalyticsBody .info-table td:nth-child(5){
+  width:150px!important;
+}
+
+#positionAnalyticsBody .info-table th:nth-child(6),
+#positionAnalyticsBody .info-table td:nth-child(6){
+  width:240px!important;
+}
+
+#positionAnalyticsBody .info-table td,
+#positionAnalyticsBody .position-analytics-table td{
+  background:rgba(12,31,45,.88)!important;
+}
+
+#positionAnalyticsBody .info-table tr:hover td,
+#positionAnalyticsBody .position-analytics-table tr:hover td{
+  background:rgba(20,50,72,.96)!important;
+}
+
+#positionAnalyticsTitle{
+  max-width:calc(100% - 70px)!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+
+@media(max-width:1200px){
+  #positionAnalyticsBody .position-analytics-grid{
+    grid-template-columns:repeat(2,minmax(190px,1fr))!important;
+  }
+}
+
+@media(max-width:900px){
+  #positionAnalyticsModal .modal{
+    width:98vw!important;
+    height:95vh!important;
+  }
+
+  #positionAnalyticsBody .position-analytics-grid{
+    grid-template-columns:1fr!important;
+  }
+
+  #positionAnalyticsBody .info-table{
+    min-width:1050px!important;
+  }
+}
+
+</style>
+</head>
+<body>
+<div id="floatBackdrop" class="hidden" onclick="closeFloatingPanels()"></div>
+
+<div id="authScreen" class="auth-screen">
+  <div class="auth-box">
+    <div class="auth-title">Вхід до оперативної дошки</div>
+    <div class="auth-subtitle">Введіть логін і пароль для доступу.</div>
+
+    <input id="loginUsername" placeholder="Логін" autocomplete="username">
+    <input id="loginPassword" type="password" placeholder="Пароль" autocomplete="current-password">
+
+    <button type="button" onclick="loginUser()" style="width:100%">Увійти</button>
+
+    <div id="authError" class="auth-error"></div>
+
+    <div class="auth-info">
+      Перший вхід за замовчуванням:<br>
+      <b>admin</b> / <b>admin123</b><br>
+      Після входу змініть пароль у “Керування”.
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="title-block">
+      <h1>Оперативна дошка позицій</h1>
+    </div>
+
+    <div id="liveDateTime" class="live-datetime">Завантаження часу...</div>
+
+    <div class="top-actions">
+      <div class="top-actions-row">
+        <span id="currentUserBadge" class="user-badge visually-hidden-badge">admin · адмін</span>
+        <button type="button" id="logoutBtn" onclick="logoutUser()" class="blue top-icon-btn icon-admin">Адмін - вийти</button>
+        <button type="button" id="createCardBtn" onclick="openCreateModal()" data-role="operator" class="top-icon-btn icon-plus">Створити карточку</button>
+        <button type="button" id="topEventBtn" class="green top-icon-btn icon-plus" onclick="toggleDrawer('eventPanel')" data-role="operator">Подія</button>
+        <button type="button" id="importExcelBtn" class="blue top-icon-btn icon-import" onclick="openExcelImport()" data-role="admin">Імпорт</button>
+      </div>
+
+      <input type="file" id="excelImportInput" accept=".xlsx,.xls" style="display:none" onchange="importExcelFile(event)">
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="dashboard-content">
+  <div class="stats">
+    <div class="stat"><b id="stTotal">0</b><span>Усього позицій</span></div>
+    <div class="stat"><b id="stOnline">0</b><span>На зв’язку</span></div>
+    <div class="stat"><b id="stOffline">0</b><span>Немає зв’язку</span></div>
+    <div class="stat"><b id="stDestroyed">0</b><span>Знищено</span></div>
+    <div class="stat"><b id="stEvents">0</b><span>Подій</span></div>
+  </div>
+
+  <div id="filterPanel" class="panel pad hidden">
+    <div class="drawer-title">Фільтри <button class="red small" onclick="hideDrawer('filterPanel')">×</button></div>
+    <div class="controls">
+      <input id="searchBox" placeholder="Пошук позиції / координат / н.п." oninput="applyFilters()">
+      <select id="filterStatus" onchange="applyFilters()">
+        <option value="all">Усі статуси</option><option value="online">На зв’язку</option><option value="offline">Немає зв’язку</option><option value="destroyed">Знищені</option>
+      </select>
+      <div class="type-checks" id="typeChecks">
+        <label><input type="checkbox" value="СП" onchange="applyFilters()"> СП</label>
+        <label><input type="checkbox" value="ВП" onchange="applyFilters()"> ВП</label>
+        <label><input type="checkbox" value="БпЛА" onchange="applyFilters()"> БпЛА</label>
+        <label><input type="checkbox" value="FPV" onchange="applyFilters()"> FPV</label>
+        <label><input type="checkbox" value="КСП" onchange="applyFilters()"> КСП</label>
+        <label><input type="checkbox" value="МВГ" onchange="applyFilters()"> МВГ</label>
+        <label><input type="checkbox" value="МБ" onchange="applyFilters()"> МБ</label>
+        <label><input type="checkbox" value="Ретранслятор" onchange="applyFilters()"> Ретранслятор</label>
+        <label><input type="checkbox" value="МП" onchange="applyFilters()"> МП</label>
+        <label><input type="checkbox" value="Тех.Евак" onchange="applyFilters()"> Тех.Евак</label>
+        <label><input type="checkbox" value="ПКП" onchange="applyFilters()"> ПКП</label>
+        <label><input type="checkbox" value="Інше" onchange="applyFilters()"> Інше</label>
+        <button type="button" class="blue small" onclick="clearTypeChecks()">Усі</button>
+      </div>
+      <select id="sortMode" onchange="applyFilters()">
+        <option value="problem">Проблемні нагору</option><option value="name">За назвою</option><option value="events">За кількістю обстрілів</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Позиція</th><th>Коорд. / н.п.</th><th>Зв’язок</th><th>Стан</th><th>Обстріли</th><th>Остання подія</th><th id="actionHeader">Дія</th>
+          </tr>
+        </thead>
+        <tbody id="positionsBody"></tbody>
+      </table>
+    </div>
+    <div class="pages">
+      <button class="blue" onclick="prevPage()">← Назад</button>
+      <div id="pageInfo" class="meta">Сторінка 1</div>
+      <button class="blue" onclick="nextPage()">Далі →</button>
+    </div>
+  </div>
+
+  <div id="eventPanel" class="panel pad hidden">
+    <div class="drawer-title">Додати подію <button class="red small" onclick="hideDrawer('eventPanel')">×</button></div>
+    <div class="form2">
+      <select id="eventPosition" onchange="updatePreview()"></select>
+      <select id="eventType" onchange="updatePreview()">
+        <option>Скид БПЛА</option><option>FPV</option><option>Міномет</option><option>Артилерія</option><option>РСЗВ</option><option>Танк</option><option>Стріл. зброя</option><option>ШТУРМ</option>
+        <option>Втрачено зв’язок</option><option>Відновлено зв’язок</option><option>Знищено позицію</option><option>Відновлено позицію</option><option>Інше</option>
+      </select>
+    </div>
+    <div class="quick">
+      <button onclick="quick('time')">Час</button><button onclick="quick('Скид БПЛА')">Скид</button><button onclick="quick('FPV')">FPV</button><button onclick="quick('Міномет')">Міномет</button><button onclick="quick('Артилерія')">Артилерія</button><button onclick="quick('ШТУРМ')">Штурм</button>
+    </div>
+    <div class="form3">
+      <input id="eventTime" placeholder="час: 00.40" oninput="updatePreview()">
+      <input id="eventDirection" placeholder="напрямок: ГУЛЯЙ ПОЛЕ" oninput="updatePreview()">
+      <div class="qtywrap"><input id="eventQty" value="1 од." oninput="updatePreview()"><div class="stepper"><button onclick="changeQty(1)">▲</button><button onclick="changeQty(-1)">▼</button></div></div>
+    </div>
+    <textarea id="eventLosses" oninput="updatePreview()" style="margin-top:8px">Втрати о/с , овт та мтз - уточняються.</textarea>
+    <div id="preview" class="preview"></div>
+    <button style="width:100%;margin-top:8px" onclick="addEvent()">Записати подію</button>
+  </div>
+
+  
+  
+<div id="logPanel" class="panel hidden">
+    <div class="journal-top-row">
+      <div class="journal-title-toggle" onclick="toggleJournalOptions()">
+        Журнал подій <span id="journalToggleArrow">▾</span>
+      </div>
+
+      <div class="journal-buttons">
+        <button class="red small" onclick="clearLog()">Очистити журнал</button>
+        <button class="red small" onclick="hideDrawer('logPanel')">×</button>
+      </div>
+    </div>
+
+    <div id="journalOptionsPanel" class="journal-options-panel hidden">
+      <div class="period-filters">
+        <label>З:
+          <input type="date" id="journalDateFrom" onchange="renderLog(); renderAnalyticsIfOpen();">
+        </label>
+
+        <label>По:
+          <input type="date" id="journalDateTo" onchange="renderLog(); renderAnalyticsIfOpen();">
+        </label>
+
+        <button class="blue small" onclick="setJournalPeriodToday()">Сьогодні</button>
+        <button class="blue small" onclick="clearJournalPeriod()">За весь час</button>
+      </div>
+
+      <div class="period-note">Журнал, аналітика та експорт формуються за вибраний період.</div>
+
+      <div class="journal-filters">
+        <label class="toggle-line">
+          <input type="checkbox" id="hideConnectionLogs" onchange="renderLog()">
+          <span>Сховати втрату/відновлення зв’язку</span>
+        </label>
+
+        <label class="toggle-line">
+          <input type="checkbox" id="showCombatOnly" onchange="renderLog()">
+          <span>Лише бойові події</span>
+        </label>
+      </div>
+    </div>
+
+    <div id="log" class="log"></div>
+  </div>
+
+
+
+    </div>
+
+  <aside class="dashboard-sidebar" aria-label="Бічні кнопки керування">
+    <button type="button" id="manageModeBtn" class="blue side-btn icon-close" onclick="toggleManagementMode()" data-role="operator">Керування</button>
+    <button type="button" class="blue side-btn icon-filter" onclick="toggleDrawer('filterPanel')">Фільтри</button>
+    <button type="button" class="blue side-btn icon-book" onclick="toggleDrawer('logPanel')">Журнал</button>
+    <button type="button" class="blue side-btn icon-chart" onclick="openAnalyticsModal()">Аналітика</button>
+    <button type="button" class="blue side-btn icon-shield" onclick="openAdminModal()" data-role="admin">Адміністрування</button>
+  </aside>
+  </div>
+
+<div id="adminModal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Адміністрування доступу</div>
+      <button class="red" onclick="closeAdminModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="section-title">Додати нового користувача</div>
+
+      <div class="admin-form-grid">
+        <input id="adminNewLogin" placeholder="логін">
+        <input id="adminNewPassword" type="password" placeholder="пароль">
+        <select id="adminNewRole">
+          <option value="admin">адмін</option>
+          <option value="operator">оператор</option>
+          <option value="viewer">перегляд</option>
+        </select>
+        <button type="button" onclick="adminAddUser()">Додати логін</button>
+      </div>
+
+      <div class="section-title">Користувачі</div>
+      <div id="adminUsersList"></div>
+
+      <div class="section-title">Змінити пароль поточного користувача</div>
+
+      <div class="admin-form-grid">
+        <input id="adminOldPassword" type="password" placeholder="старий пароль">
+        <input id="adminNewPasswordSelf" type="password" placeholder="новий пароль">
+        <input id="adminNewPasswordSelf2" type="password" placeholder="повторити новий пароль">
+        <button type="button" onclick="adminChangeMyPassword()">Змінити пароль</button>
+      </div>
+
+      <div class="section-title">Примітка</div>
+      <div class="muted">
+        Це локальні користувачі в цьому браузері. Для справжнього захисту на декількох ПК потрібна серверна версія.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="cardModal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="cardModalTitle">Створення карточки позиції</div>
+      <button class="red" onclick="closeCardModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="section-title">Дані для дошки</div>
+
+      <div class="modal-grid">
+        <select id="cardType">
+          <option>СП</option>
+          <option>ВП</option>
+          <option>БпЛА</option>
+          <option>FPV</option>
+          <option>КСП</option>
+          <option>МВГ</option>
+          <option>МБ</option>
+          <option>Ретранслятор</option>
+          <option>МП</option>
+          <option>Тех.Евак</option>
+          <option>ПКП</option>
+          <option>Інше</option>
+        </select>
+
+        <input id="cardName" placeholder='Назва: СП "СОКРАТ"'>
+        <input id="cardCoords" placeholder="Координати">
+        <input id="cardVillage" placeholder="н.п.">
+      </div>
+
+      <div class="section-title">Військовослужбовці</div>
+
+      <div id="personnelList"></div>
+
+      <button class="blue" type="button" onclick="addPersonForm()">+ Додати в/с</button>
+
+      <div class="modal-actions">
+        <button class="blue" type="button" onclick="closeCardModal()">Скасувати</button>
+        <button type="button" onclick="saveCard()">Зберегти карточку</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div id="positionAnalyticsModal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="positionAnalyticsTitle">Аналітика позиції</div>
+      <button class="red" onclick="closePositionAnalyticsModal()">×</button>
+    </div>
+    <div class="modal-body" id="positionAnalyticsBody"></div>
+  </div>
+</div>
+
+<div id="infoModal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="infoTitle">Інформація</div><button class="red" onclick="closeInfoModal()">×</button></div>
+    <div class="modal-body" id="infoBody"></div>
+  </div>
+</div>
+
+
+<div id="analyticsModal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Аналітика обстрілів та подій</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="green small" onclick="exportAnalyticsHTML()">Експорт HTML</button>
+        <button class="blue small" onclick="exportAnalyticsCSV()">Експорт CSV</button>
+        <button class="red" onclick="closeAnalyticsModal()">×</button>
+      </div>
+    </div>
+    <div class="modal-body" id="analyticsBody"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+const KEY="operational_board_v27_stable";
+const PAGE_SIZE=10;
+let editEventId=null;
+let managementMode=false;
+let page=1;
+let controlsVisible=false;
+let editCardId=null;
+let filtered=[];
+let state=load();
+
+function uid(){return "id_"+Date.now()+"_"+Math.random().toString(16).slice(2)}
+function load(){
+  const saved=localStorage.getItem(KEY);
+  if(saved){try{return JSON.parse(saved)}catch(e){}}
+  return {positions:[],events:[]};
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function esc(t){const d=document.createElement("div");d.textContent=t??"";return d.innerHTML}
+function pos(id){return state.positions.find(p=>p.id===id)}
+function isFire(t){return !["Втрачено зв’язок","Відновлено зв’язок","Знищено позицію","Відновлено позицію"].includes(t)}
+function countFire(id){return state.events.filter(e=>e.positionId===id&&isFire(e.type)).length}
+function nowTime(){const d=new Date();return String(d.getHours()).padStart(2,"0")+"."+String(d.getMinutes()).padStart(2,"0")}
+function dur(ms){let s=Math.max(0,Math.floor(ms/1000));let h=Math.floor(s/3600);s%=3600;let m=Math.floor(s/60);s%=60;return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")}
+
+function updateFloatingBackdrop(){
+  const backdrop=document.getElementById("floatBackdrop");
+  const eventOpen=!document.getElementById("eventPanel")?.classList.contains("hidden");
+  const logOpen=!document.getElementById("logPanel")?.classList.contains("hidden");
+  const anyOpen=eventOpen || logOpen;
+  if(backdrop) backdrop.classList.toggle("hidden", !anyOpen);
+  document.body.classList.toggle("modal-open", anyOpen);
+}
+
+function closeFloatingPanels(){
+  ["eventPanel","logPanel"].forEach(id=>document.getElementById(id)?.classList.add("hidden"));
+  updateFloatingBackdrop();
+}
+
+function toggleDrawer(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+
+  if(id==="eventPanel" || id==="logPanel"){
+    const willOpen=el.classList.contains("hidden");
+    ["eventPanel","logPanel"].forEach(other=>{
+      if(other!==id) document.getElementById(other)?.classList.add("hidden");
+    });
+    el.classList.toggle("hidden", !willOpen);
+    if(id==="eventPanel" && willOpen) updatePreview();
+    if(id==="logPanel" && willOpen) renderLog();
+    updateFloatingBackdrop();
+    return;
+  }
+
+  el.classList.toggle("hidden");
+}
+
+function hideDrawer(id){
+  document.getElementById(id)?.classList.add("hidden");
+  if(id==="eventPanel" || id==="logPanel") updateFloatingBackdrop();
+}
+
+document.addEventListener("keydown", function(e){
+  if(e.key==="Escape") closeFloatingPanels();
+});
+function toggleControls(){controlsVisible=!controlsVisible;renderPositions()}
+
+
+
+const AUTH_KEY="op_board_auth_users_v1";
+const SESSION_KEY="op_board_auth_session_v1";
+
+function simpleHash(str){
+  let h=2166136261;
+  str=String(str||"");
+  for(let i=0;i<str.length;i++){
+    h^=str.charCodeAt(i);
+    h+=(h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24);
+  }
+  return ("00000000"+(h>>>0).toString(16)).slice(-8);
+}
+
+function getAuthUsers(){
+  let users=[];
+  try{
+    users=JSON.parse(localStorage.getItem(AUTH_KEY)||"[]");
+  }catch(e){
+    users=[];
+  }
+
+  if(!Array.isArray(users) || !users.length){
+    users=[{
+      login:"admin",
+      passHash:simpleHash("admin123"),
+      role:"admin",
+      createdAt:new Date().toISOString()
+    }];
+    localStorage.setItem(AUTH_KEY,JSON.stringify(users));
+  }
+
+  return users;
+}
+
+function saveAuthUsers(users){
+  localStorage.setItem(AUTH_KEY,JSON.stringify(users));
+}
+
+function getSession(){
+  try{
+    return JSON.parse(localStorage.getItem(SESSION_KEY)||"null");
+  }catch(e){
+    return null;
+  }
+}
+
+function setSession(user){
+  localStorage.setItem(SESSION_KEY,JSON.stringify({
+    login:user.login,
+    role:user.role,
+    loginAt:new Date().toISOString()
+  }));
+}
+
+function clearSession(){
+  localStorage.removeItem(SESSION_KEY);
+}
+
+function loginUser(){
+  const login=(document.getElementById("loginUsername")?.value || "").trim();
+  const pass=document.getElementById("loginPassword")?.value || "";
+  const err=document.getElementById("authError");
+
+  let users=getAuthUsers();
+  let user=users.find(u=>String(u.login).toLowerCase()===login.toLowerCase());
+
+  /* Резервний вхід, щоб файл не блокувався через старий localStorage у браузері.
+     Дані позицій/журналу не чіпає. */
+  if(login.toLowerCase()==="admin" && pass==="admin123"){
+    if(!user){
+      user={login:"admin",passHash:simpleHash("admin123"),role:"admin",createdAt:new Date().toISOString()};
+      users.push(user);
+    }else{
+      user.passHash=simpleHash("admin123");
+      user.role="admin";
+    }
+    saveAuthUsers(users);
+    setSession(user);
+    if(err)err.textContent="";
+    applyAuthState();
+    return;
+  }
+
+  if(!user || user.passHash!==simpleHash(pass)){
+    if(err)err.textContent="Невірний логін або пароль. Для входу за замовчуванням: admin / admin123";
+    return;
+  }
+
+  setSession(user);
+  if(err)err.textContent="";
+  applyAuthState();
+}
+
+function logoutUser(){
+  clearSession();
+  applyAuthState();
+}
+
+function hasRole(required){
+  const s=getSession();
+  if(!s)return false;
+
+  const rank={viewer:1,operator:2,admin:3};
+  return (rank[s.role]||0)>=(rank[required]||0);
+}
+
+function requireRole(required){
+  if(!hasRole(required)){
+    alert("Недостатньо прав доступу.");
+    return false;
+  }
+  return true;
+}
+
+function applyAuthState(){
+  const session=getSession();
+  const auth=document.getElementById("authScreen");
+  const badge=document.getElementById("currentUserBadge");
+
+  if(!session){
+    if(auth)auth.classList.remove("hidden");
+    if(badge)badge.textContent="Гість";
+    document.querySelectorAll("[data-role]").forEach(el=>el.classList.add("admin-hidden"));
+    return;
+  }
+
+  if(auth)auth.classList.add("hidden");
+  if(badge)badge.textContent=session.login+" · "+roleLabel(session.role);
+
+  document.querySelectorAll("[data-role]").forEach(el=>{
+    const role=el.getAttribute("data-role");
+    if(hasRole(role)) el.classList.remove("admin-hidden");
+    else el.classList.add("admin-hidden");
+  });
+
+  renderUsersList();
+  if(document.getElementById('adminModal')?.classList.contains('show')) renderAdminUsersList();
+}
+
+function roleLabel(role){
+  if(role==="admin")return "адмін";
+  if(role==="operator")return "оператор";
+  return "перегляд";
+}
+
+function renderUsersList(){
+  const box=document.getElementById("usersList");
+  if(!box)return;
+
+  const session=getSession();
+  const users=getAuthUsers();
+
+  box.innerHTML="";
+
+  users.forEach(u=>{
+    const div=document.createElement("div");
+    div.className="admin-user-row";
+    div.innerHTML=`
+      <b>${esc(u.login)}</b>
+      <span>${roleLabel(u.role)}</span>
+      <select onchange="changeUserRole('${u.login}',this.value)" ${u.login==="admin"?"disabled":""}>
+        <option value="admin" ${u.role==="admin"?"selected":""}>адмін</option>
+        <option value="operator" ${u.role==="operator"?"selected":""}>оператор</option>
+        <option value="viewer" ${u.role==="viewer"?"selected":""}>перегляд</option>
+      </select>
+      <button class="red small" onclick="deleteAuthUser('${u.login}')" ${u.login===session?.login||u.login==="admin"?"disabled":""}>Видалити</button>
+    `;
+    box.appendChild(div);
+  });
+}
+
+function addAuthUser(){
+  if(!requireRole("admin"))return;
+
+  const login=document.getElementById("newUserLogin")?.value.trim();
+  const pass=document.getElementById("newUserPassword")?.value || "";
+  const role=document.getElementById("newUserRole")?.value || "viewer";
+
+  if(!login || !pass){
+    alert("Вкажіть логін і пароль.");
+    return;
+  }
+
+  const users=getAuthUsers();
+  if(users.some(u=>u.login===login)){
+    alert("Такий логін уже існує.");
+    return;
+  }
+
+  users.push({
+    login,
+    passHash:simpleHash(pass),
+    role,
+    createdAt:new Date().toISOString()
+  });
+
+  saveAuthUsers(users);
+
+  document.getElementById("newUserLogin").value="";
+  document.getElementById("newUserPassword").value="";
+
+  renderUsersList();
+}
+
+function changeUserRole(login,role){
+  if(!requireRole("admin"))return;
+
+  const users=getAuthUsers();
+  const u=users.find(x=>x.login===login);
+  if(!u)return;
+
+  u.role=role;
+  saveAuthUsers(users);
+  renderUsersList();
+}
+
+function deleteAuthUser(login){
+  if(!requireRole("admin"))return;
+  if(login==="admin"){
+    alert("Основного admin видаляти не можна.");
+    return;
+  }
+
+  if(!confirm("Видалити користувача "+login+"?"))return;
+
+  const users=getAuthUsers().filter(u=>u.login!==login);
+  saveAuthUsers(users);
+  renderUsersList();
+}
+
+function changeCurrentPassword(){
+  const session=getSession();
+  if(!session)return;
+
+  const oldPass=document.getElementById("changePassOld")?.value || "";
+  const newPass=document.getElementById("changePassNew")?.value || "";
+
+  if(!newPass || newPass.length<4){
+    alert("Новий пароль має бути не коротший 4 символів.");
+    return;
+  }
+
+  const users=getAuthUsers();
+  const u=users.find(x=>x.login===session.login);
+  if(!u)return;
+
+  if(u.passHash!==simpleHash(oldPass)){
+    alert("Старий пароль невірний.");
+    return;
+  }
+
+  u.passHash=simpleHash(newPass);
+  saveAuthUsers(users);
+
+  document.getElementById("changePassOld").value="";
+  document.getElementById("changePassNew").value="";
+
+  alert("Пароль змінено.");
+}
+
+// Guard critical actions
+function guardAdminAction(){
+  return requireRole("admin");
+}
+
+function guardOperatorAction(){
+  return requireRole("operator");
+}
+
+window.addEventListener("load",applyAuthState);
+
+window.addEventListener("DOMContentLoaded",()=>{
+  ["loginUsername","loginPassword"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      el.addEventListener("keydown",e=>{
+        if(e.key==="Enter") loginUser();
+      });
+    }
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+function openAdminModal(){
+  if(!requireRole("admin"))return;
+  renderAdminUsersList();
+  const modal=document.getElementById("adminModal");
+  if(modal) modal.classList.add("show");
+}
+
+function closeAdminModal(){
+  const modal=document.getElementById("adminModal");
+  if(modal) modal.classList.remove("show");
+}
+
+function adminAddUser(){
+  if(!requireRole("admin"))return;
+
+  const login=document.getElementById("adminNewLogin")?.value.trim();
+  const pass=document.getElementById("adminNewPassword")?.value || "";
+  const role=document.getElementById("adminNewRole")?.value || "viewer";
+
+  if(!login || !pass){
+    alert("Вкажіть логін і пароль.");
+    return;
+  }
+
+  if(pass.length<4){
+    alert("Пароль має бути мінімум 4 символи.");
+    return;
+  }
+
+  const users=getAuthUsers();
+
+  if(users.some(u=>u.login.toLowerCase()===login.toLowerCase())){
+    alert("Такий логін уже існує.");
+    return;
+  }
+
+  users.push({
+    login,
+    passHash:simpleHash(pass),
+    role,
+    createdAt:new Date().toISOString()
+  });
+
+  saveAuthUsers(users);
+
+  document.getElementById("adminNewLogin").value="";
+  document.getElementById("adminNewPassword").value="";
+
+  renderAdminUsersList();
+  applyAuthState();
+
+  alert("Користувача додано.");
+}
+
+function renderAdminUsersList(){
+  const box=document.getElementById("adminUsersList");
+  if(!box)return;
+
+  const session=getSession();
+  const users=getAuthUsers();
+
+  box.innerHTML="";
+
+  users.forEach(u=>{
+    const row=document.createElement("div");
+    row.className="admin-user-row-v2";
+
+    const canDelete = u.login!=="admin" && u.login!==session?.login;
+
+    row.innerHTML=`
+      <div>
+        <b>${esc(u.login)}</b><br>
+        <span class="meta">${roleLabel(u.role)}</span>
+      </div>
+
+      <select onchange="adminChangeUserRole('${u.login}', this.value)" ${u.login==="admin" ? "disabled" : ""}>
+        <option value="admin" ${u.role==="admin" ? "selected" : ""}>адмін</option>
+        <option value="operator" ${u.role==="operator" ? "selected" : ""}>оператор</option>
+        <option value="viewer" ${u.role==="viewer" ? "selected" : ""}>перегляд</option>
+      </select>
+
+      <button class="blue small" onclick="adminResetPassword('${u.login}')">Змінити пароль</button>
+      <button class="red small" onclick="adminDeleteUser('${u.login}')" ${canDelete ? "" : "disabled"}>Видалити</button>
+    `;
+
+    box.appendChild(row);
+  });
+}
+
+function adminChangeUserRole(login, role){
+  if(!requireRole("admin"))return;
+
+  const users=getAuthUsers();
+  const u=users.find(x=>x.login===login);
+  if(!u)return;
+
+  if(login==="admin"){
+    alert("Основний admin має залишатися адміном.");
+    renderAdminUsersList();
+    return;
+  }
+
+  u.role=role;
+  saveAuthUsers(users);
+  renderAdminUsersList();
+  applyAuthState();
+}
+
+function adminResetPassword(login){
+  if(!requireRole("admin"))return;
+
+  const newPass=prompt("Новий пароль для користувача: " + login);
+  if(!newPass)return;
+
+  if(newPass.length<4){
+    alert("Пароль має бути мінімум 4 символи.");
+    return;
+  }
+
+  const users=getAuthUsers();
+  const u=users.find(x=>x.login===login);
+  if(!u)return;
+
+  u.passHash=simpleHash(newPass);
+  saveAuthUsers(users);
+
+  alert("Пароль змінено.");
+}
+
+function adminDeleteUser(login){
+  if(!requireRole("admin"))return;
+
+  const session=getSession();
+
+  if(login==="admin"){
+    alert("Основного admin видаляти не можна.");
+    return;
+  }
+
+  if(login===session?.login){
+    alert("Не можна видалити поточного користувача.");
+    return;
+  }
+
+  if(!confirm("Видалити користувача " + login + "?"))return;
+
+  const users=getAuthUsers().filter(u=>u.login!==login);
+  saveAuthUsers(users);
+  renderAdminUsersList();
+  applyAuthState();
+}
+
+function adminChangeMyPassword(){
+  const session=getSession();
+  if(!session)return;
+
+  const oldPass=document.getElementById("adminOldPassword")?.value || "";
+  const newPass=document.getElementById("adminNewPasswordSelf")?.value || "";
+  const newPass2=document.getElementById("adminNewPasswordSelf2")?.value || "";
+
+  if(!oldPass || !newPass){
+    alert("Вкажіть старий і новий пароль.");
+    return;
+  }
+
+  if(newPass.length<4){
+    alert("Новий пароль має бути мінімум 4 символи.");
+    return;
+  }
+
+  if(newPass!==newPass2){
+    alert("Нові паролі не збігаються.");
+    return;
+  }
+
+  const users=getAuthUsers();
+  const u=users.find(x=>x.login===session.login);
+  if(!u)return;
+
+  if(u.passHash!==simpleHash(oldPass)){
+    alert("Старий пароль невірний.");
+    return;
+  }
+
+  u.passHash=simpleHash(newPass);
+  saveAuthUsers(users);
+
+  document.getElementById("adminOldPassword").value="";
+  document.getElementById("adminNewPasswordSelf").value="";
+  document.getElementById("adminNewPasswordSelf2").value="";
+
+  alert("Ваш пароль змінено.");
+}
+
+function openExcelImport(){
+  if(!requireRole('admin'))return;
+  const input=document.getElementById("excelImportInput");
+  if(!input){
+    alert("Поле імпорту не знайдено.");
+    return;
+  }
+
+  input.value="";
+  input.click();
+}
+
+function normalizeImportText(v){
+  return String(v ?? "").trim();
+}
+
+function normalizeBoolUA(v){
+  const s=normalizeImportText(v).toLowerCase();
+  return ["так","true","1","yes","y","он","online"].includes(s);
+}
+
+function normalizeDateTimeFromExcel(dateValue, timeValue){
+  let datePart="";
+  let timePart=normalizeImportText(timeValue);
+
+  if(dateValue instanceof Date){
+    const dd=String(dateValue.getDate()).padStart(2,"0");
+    const mm=String(dateValue.getMonth()+1).padStart(2,"0");
+    const yyyy=dateValue.getFullYear();
+    datePart=`${yyyy}-${mm}-${dd}`;
+  }else{
+    const s=normalizeImportText(dateValue);
+    const m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+    if(m){
+      datePart=`${m[3]}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;
+    }else if(s.match(/^\d{4}-\d{2}-\d{2}/)){
+      datePart=s.slice(0,10);
+    }
+  }
+
+  if(!timePart) timePart="00.00";
+  timePart=timePart.replace(":",".");
+  const tm=timePart.match(/(\d{1,2})\.(\d{1,2})/);
+  const hh=tm ? String(tm[1]).padStart(2,"0") : "00";
+  const mi=tm ? String(tm[2]).padStart(2,"0") : "00";
+
+  if(!datePart){
+    const d=new Date();
+    datePart=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+
+  return new Date(`${datePart}T${hh}:${mi}:00`).toISOString();
+}
+
+function readSheetRows(workbook, sheetName){
+  const sheet=workbook.Sheets[sheetName];
+  if(!sheet) return [];
+  return XLSX.utils.sheet_to_json(sheet, {defval:"", raw:false});
+}
+
+function findSheetName(workbook, possibleNames){
+  const names=workbook.SheetNames || [];
+  for(const p of possibleNames){
+    const found=names.find(n=>n.trim().toLowerCase()===p.trim().toLowerCase());
+    if(found) return found;
+  }
+  return null;
+}
+
+function importExcelFile(event){
+  const file=event.target.files?.[0];
+  if(!file) return;
+
+  if(typeof XLSX==="undefined"){
+    alert("Бібліотека імпорту Excel не завантажилась. Потрібен інтернет для першого відкриття або локально вбудована бібліотека SheetJS.");
+    return;
+  }
+
+  const reader=new FileReader();
+
+  reader.onload=function(e){
+    try{
+      const data=new Uint8Array(e.target.result);
+      const workbook=XLSX.read(data,{type:"array", cellDates:true});
+
+      const positionsSheet=findSheetName(workbook,["Позиції","Positions"]);
+      const personnelSheet=findSheetName(workbook,["Особовий_склад","Особовий склад","Personnel"]);
+      const eventsSheet=findSheetName(workbook,["Події","Events"]);
+
+      if(!positionsSheet){
+        alert("Не знайдено лист «Позиції».");
+        return;
+      }
+
+      const replaceAll=confirm("Очистити поточні дані перед імпортом?\n\nOK — замінити все.\nСкасувати — додати/оновити до існуючих.");
+
+      if(replaceAll){
+        state.positions=[];
+        state.events=[];
+      }
+
+      const posRows=readSheetRows(workbook,positionsSheet);
+      const peopleRows=personnelSheet ? readSheetRows(workbook,personnelSheet) : [];
+      const eventRows=eventsSheet ? readSheetRows(workbook,eventsSheet) : [];
+
+      const idMap={};
+      let addedPositions=0, updatedPositions=0, skippedPositions=0;
+      let addedPeople=0, skippedPeople=0;
+      let addedEvents=0, skippedEvents=0;
+
+      // Import positions
+      posRows.forEach((r,idx)=>{
+        const rawId=normalizeImportText(r["ID_позиції"]);
+        const type=normalizeImportText(r["Тип"]) || "СП";
+        const name=normalizeImportText(r["Назва"]);
+        const coords=normalizeImportText(r["Координати"]);
+        const village=normalizeImportText(r["Н.п."] || r["НП"] || r["Населений пункт"]);
+        const online=normalizeBoolUA(r["На_зв’язку"]);
+        const destroyed=normalizeBoolUA(r["Знищено"]);
+        const note=normalizeImportText(r["Примітка"]);
+
+        if(!name){
+          skippedPositions++;
+          return;
+        }
+
+        const id=rawId || ("IMP_"+name.replace(/\s+/g,"_")+"_"+idx);
+        idMap[id]=id;
+
+        let p=state.positions.find(x=>x.importId===id || x.id===id || x.name.toLowerCase()===name.toLowerCase());
+
+        if(p){
+          p.importId=id;
+          p.type=type;
+          p.name=name;
+          p.coords=coords;
+          p.village=village;
+          p.online=destroyed ? false : online;
+          p.destroyed=destroyed;
+          p.note=note;
+          if(!p.personnel) p.personnel=[];
+          updatedPositions++;
+        }else{
+          state.positions.push({
+            id:uid(),
+            importId:id,
+            type,
+            name,
+            coords,
+            village,
+            online: destroyed ? false : online,
+            destroyed,
+            offlineSince: (!online || destroyed) ? Date.now() : null,
+            note,
+            lastEvent:"—",
+            personnel:[]
+          });
+          addedPositions++;
+        }
+      });
+
+      function findImportedPosition(idValue,nameValue){
+        const id=normalizeImportText(idValue);
+        const name=normalizeImportText(nameValue);
+
+        if(id){
+          const p=state.positions.find(x=>x.importId===id || x.id===id);
+          if(p) return p;
+        }
+
+        if(name){
+          return state.positions.find(x=>x.name.toLowerCase()===name.toLowerCase());
+        }
+
+        return null;
+      }
+
+      // Clear personnel for imported positions if replacing all, or when updating by file? 
+      // To avoid duplicates, for every position present in Excel we reset personnel before adding from Excel.
+      const importedPositionIds = new Set(posRows.map(r=>normalizeImportText(r["ID_позиції"])).filter(Boolean));
+      state.positions.forEach(p=>{
+        if(importedPositionIds.has(p.importId)){
+          p.personnel=[];
+        }
+      });
+
+      // Import personnel
+      peopleRows.forEach(r=>{
+        const p=findImportedPosition(r["ID_позиції"], r["Назва_позиції"]);
+        if(!p){
+          skippedPeople++;
+          return;
+        }
+
+        const person={
+          unit:normalizeImportText(r["Підрозділ"]),
+          position:normalizeImportText(r["Посада"]),
+          rank:normalizeImportText(r["Звання"]),
+          name:normalizeImportText(r["ПІБ"]),
+          callsign:normalizeImportText(r["Позивний"]),
+          status:normalizeImportText(r["Статус"]),
+          note:normalizeImportText(r["Примітка"])
+        };
+
+        if(!person.name && !person.callsign && !person.position){
+          skippedPeople++;
+          return;
+        }
+
+        if(!p.personnel) p.personnel=[];
+        p.personnel.push(person);
+        addedPeople++;
+      });
+
+      // Import events
+      eventRows.forEach(r=>{
+        const p=findImportedPosition(r["ID_позиції"], r["Назва_позиції"]);
+        if(!p){
+          skippedEvents++;
+          return;
+        }
+
+        const type=normalizeImportText(r["Тип_події"]) || "Інше";
+        let text=normalizeImportText(r["Текст_події"]);
+        const time=normalizeImportText(r["Час"]);
+        const qty=normalizeImportText(r["Кількість"]);
+        const dir=normalizeImportText(r["Напрямок"]);
+        const approved=normalizeBoolUA(r["Затверджено"]);
+        const note=normalizeImportText(r["Примітка"]);
+
+        if(!text){
+          text = `${time ? time+" " : ""}${type}`;
+          if(qty) text += ` (${qty})`;
+          text += ` позиція ${p.name}`;
+          if(p.coords) text += ` (${p.coords})`;
+          if(p.village) text += ` ${p.village}`;
+          if(dir) text += ` з напрямку ${dir}`;
+          text += ". Втрати о/с , овт та мтз - уточняються.";
+        }
+
+        const createdAt=normalizeDateTimeFromExcel(r["Дата"], r["Час"]);
+
+        // prevent exact duplicate by position + type + createdAt + text
+        const duplicate=state.events.some(e=>
+          e.positionId===p.id &&
+          e.type===type &&
+          e.createdAt===createdAt &&
+          e.text===text
+        );
+
+        if(duplicate){
+          skippedEvents++;
+          return;
+        }
+
+        state.events.push({
+          id:uid(),
+          positionId:p.id,
+          positionName:p.name,
+          type,
+          text,
+          createdAt,
+          approved,
+          losses:"",
+          note
+        });
+
+        p.lastEvent=text;
+
+        if(type==="Втрачено зв’язок"){
+          p.online=false;
+          p.destroyed=false;
+          p.offlineSince=Date.now();
+        }
+
+        if(type==="Відновлено зв’язок"){
+          p.online=true;
+          p.destroyed=false;
+          p.offlineSince=null;
+        }
+
+        if(type==="Знищено позицію"){
+          p.destroyed=true;
+          p.online=false;
+          p.offlineSince=Date.now();
+        }
+
+        if(type==="Відновлено позицію"){
+          p.destroyed=false;
+          p.online=true;
+          p.offlineSince=null;
+        }
+
+        addedEvents++;
+      });
+
+      save();
+      applyFilters();
+      renderLog();
+
+      alert(
+        "Імпорт завершено:\\n\\n"+
+        "Позиції додано: "+addedPositions+"\\n"+
+        "Позиції оновлено: "+updatedPositions+"\\n"+
+        "Позиції пропущено: "+skippedPositions+"\\n\\n"+
+        "В/с додано: "+addedPeople+"\\n"+
+        "В/с пропущено: "+skippedPeople+"\\n\\n"+
+        "Події додано: "+addedEvents+"\\n"+
+        "Події пропущено: "+skippedEvents
+      );
+
+    }catch(err){
+      console.error(err);
+      alert("Помилка імпорту Excel: "+err.message);
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+function openCreateModal(){
+  if(!requireRole('operator'))return;
+  editCardId=null;
+
+  document.getElementById("cardModalTitle").textContent="Створення карточки позиції";
+  document.getElementById("cardType").value="СП";
+  document.getElementById("cardName").value="";
+  document.getElementById("cardCoords").value="";
+  document.getElementById("cardVillage").value="";
+  document.getElementById("personnelList").innerHTML="";
+
+  addPersonForm();
+
+  document.getElementById("cardModal").classList.add("show");
+}
+
+function openEditModal(id){
+  closeInfoModal();
+
+  const p=pos(id);
+  if(!p)return;
+
+  editCardId=id;
+
+  document.getElementById("cardModalTitle").textContent="Редагування карточки позиції";
+  document.getElementById("cardType").value=p.type||"СП";
+  document.getElementById("cardName").value=p.name||"";
+  document.getElementById("cardCoords").value=p.coords||"";
+  document.getElementById("cardVillage").value=p.village||"";
+  document.getElementById("personnelList").innerHTML="";
+
+  (p.personnel||[]).forEach(x=>addPersonForm(x));
+  if(!(p.personnel||[]).length)addPersonForm();
+
+  document.getElementById("cardModal").classList.add("show");
+}
+
+function closeCardModal(){
+  document.getElementById("cardModal").classList.remove("show");
+}
+
+function addPersonForm(person={}){
+  const div=document.createElement("div");
+  div.className="person-card";
+  div.innerHTML=`
+    <div class="person-grid">
+      <input data-field="unit" placeholder="підрозділ" value="${esc(person.unit||"")}">
+      <input data-field="position" placeholder="посада" value="${esc(person.position||"")}">
+      <input data-field="rank" placeholder="звання" value="${esc(person.rank||"")}">
+      <input data-field="name" placeholder="ПІБ" value="${esc(person.name||"")}">
+      <input data-field="callsign" placeholder="позивний" value="${esc(person.callsign||"")}">
+    </div>
+    <div class="person-status-grid">
+      <select data-field="status">
+        <option ${!person.status?"selected":""}>Статус</option>
+        <option ${person.status==="на позиції"?"selected":""}>на позиції</option>
+        <option ${person.status==="200"?"selected":""}>200</option>
+        <option ${person.status==="300"?"selected":""}>300</option>
+        <option ${person.status==="500"?"selected":""}>500</option>
+        <option ${person.status==="евакуйований"?"selected":""}>евакуйований</option>
+        <option ${person.status==="інше"?"selected":""}>інше</option>
+      </select>
+      <input data-field="note" placeholder="примітка" value="${esc(person.note||"")}">
+    </div>
+
+    <div class="person-transfer-row">
+      <select class="target-position-select">
+        ${buildTargetPositionOptions()}
+      </select>
+      <button type="button" class="blue small" onclick="copyPersonFromCard(this)">Копіювати</button>
+      <button type="button" class="green small" onclick="movePersonFromCard(this)">Перенести</button>
+    </div>
+
+    <div style="text-align:right;margin-top:8px">
+      <button class="red small" onclick="this.closest('.person-card').remove()">Видалити в/с</button>
+    </div>
+  `;
+  personnelList.appendChild(div);
+}
+
+function buildTargetPositionOptions(){
+  const currentId = editCardId || "";
+  return state.positions
+    .filter(p => p.id !== currentId)
+    .map(p => `<option value="${p.id}">${esc(p.name)}</option>`)
+    .join("") || `<option value="">Немає іншої позиції</option>`;
+}
+
+function getPersonFromCardElement(card){
+  const get=f=>card.querySelector(`[data-field="${f}"]`)?.value.trim()||"";
+  const st=get("status");
+  return {
+    unit:get("unit"),
+    position:get("position"),
+    rank:get("rank"),
+    name:get("name"),
+    callsign:get("callsign"),
+    status:st==="Статус"?"":st,
+    note:get("note")
+  };
+}
+
+function copyPersonFromCard(btn){
+  const card=btn.closest(".person-card");
+  const targetId=card.querySelector(".target-position-select")?.value;
+  if(!targetId){alert("Оберіть позицію.");return;}
+  const target=pos(targetId);
+  if(!target){alert("Позицію не знайдено.");return;}
+  const person=getPersonFromCardElement(card);
+
+  if(!person.name && !person.callsign){
+    alert("Немає кого копіювати: заповніть хоча б ПІБ або позивний.");
+    return;
+  }
+
+  if(!confirm(`Скопіювати в/с на позицію "${target.name}"?`))return;
+
+  if(!target.personnel)target.personnel=[];
+  target.personnel.push({...person});
+  save();
+  alert("В/с скопійовано.");
+}
+
+function movePersonFromCard(btn){
+  const card=btn.closest(".person-card");
+  const targetId=card.querySelector(".target-position-select")?.value;
+  if(!targetId){alert("Оберіть позицію.");return;}
+  const target=pos(targetId);
+  if(!target){alert("Позицію не знайдено.");return;}
+  const person=getPersonFromCardElement(card);
+
+  if(!person.name && !person.callsign){
+    alert("Немає кого переносити: заповніть хоча б ПІБ або позивний.");
+    return;
+  }
+
+  if(!confirm(`Перенести в/с на позицію "${target.name}"?`))return;
+
+  if(!target.personnel)target.personnel=[];
+  target.personnel.push({...person});
+  card.remove();
+
+  saveCard(false);
+  alert("В/с перенесено.");
+}
+
+function collectPersonnel(){
+  return [...personnelList.querySelectorAll(".person-card")].map(card=>{
+    const get=f=>card.querySelector(`[data-field="${f}"]`)?.value.trim()||"";
+    const st=get("status");
+    return {unit:get("unit"),position:get("position"),rank:get("rank"),name:get("name"),callsign:get("callsign"),status:st==="Статус"?"":st,note:get("note")}
+  }).filter(x=>x.unit||x.position||x.rank||x.name||x.callsign||x.status||x.note);
+}
+function saveCard(closeAfterSave=true){
+  if(!requireRole('operator'))return;
+  const name=cardName.value.trim();
+  if(!name){alert("Вкажіть назву позиції.");return}
+  const data={type:cardType.value,name,coords:cardCoords.value.trim(),village:cardVillage.value.trim(),personnel:collectPersonnel()};
+  if(editCardId){
+    const p=pos(editCardId); if(!p)return;
+    Object.assign(p,data);
+  }else{
+    state.positions.push({id:uid(),...data,online:true,destroyed:false,offlineSince:null,lastEvent:"—"});
+  }
+  save();
+  if(closeAfterSave) closeCardModal();
+  applyFilters();
+}
+
+
+function closePositionAnalyticsModal(){
+  const modal=document.getElementById("positionAnalyticsModal");
+  if(modal) modal.classList.remove("show");
+}
+
+function eventTimeLabel(e){
+  try{
+    return new Date(e.createdAt).toLocaleString("uk-UA");
+  }catch(err){
+    return "";
+  }
+}
+
+function isPositionFireEvent(type){
+  return [
+    "FPV",
+    "Скид БПЛА",
+    "Міномет",
+    "Артилерія",
+    "РСЗВ",
+    "Танк",
+    "Стріл. зброя",
+    "Штурм",
+    "ШТУРМ"
+  ].includes(type);
+}
+
+function calculateOfflineStats(positionEvents){
+  const sorted=[...positionEvents].sort((a,b)=>new Date(a.createdAt||0)-new Date(b.createdAt||0));
+  let lostAt=null;
+  let periods=[];
+  let lostCount=0;
+
+  sorted.forEach(e=>{
+    if(e.type==="Втрачено зв’язок"){
+      lostCount++;
+      lostAt=new Date(e.createdAt||Date.now()).getTime();
+    }
+
+    if(e.type==="Відновлено зв’язок" && lostAt){
+      const restoredAt=new Date(e.createdAt||Date.now()).getTime();
+      if(restoredAt>=lostAt){
+        periods.push(restoredAt-lostAt);
+      }
+      lostAt=null;
+    }
+  });
+
+  if(lostAt){
+    periods.push(Date.now()-lostAt);
+  }
+
+  const total=periods.reduce((a,b)=>a+b,0);
+  const avg=periods.length ? Math.round(total/periods.length) : 0;
+
+  return {
+    lostCount,
+    periodsCount:periods.length,
+    totalMs:total,
+    avgMs:avg
+  };
+}
+
+function formatDurationMs(ms){
+  ms=Math.max(0,Number(ms||0));
+  let s=Math.floor(ms/1000);
+  const h=Math.floor(s/3600);
+  s%=3600;
+  const m=Math.floor(s/60);
+  s%=60;
+  return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+}
+
+function openPositionAnalyticsModal(positionId){
+  closeInfoModal();
+  const p=pos(positionId);
+  if(!p)return;
+
+  const modal=document.getElementById("positionAnalyticsModal");
+  const title=document.getElementById("positionAnalyticsTitle");
+  const body=document.getElementById("positionAnalyticsBody");
+
+  if(!modal || !title || !body)return;
+
+  const allEvents=(state.events||[]).filter(e=>e.positionId===positionId);
+  const fireEvents=allEvents.filter(e=>isPositionFireEvent(e.type));
+  const fpvCount=allEvents.filter(e=>e.type==="FPV").length;
+  const artilleryCount=allEvents.filter(e=>e.type==="Артилерія").length;
+  const mortarCount=allEvents.filter(e=>e.type==="Міномет").length;
+  const dropCount=allEvents.filter(e=>e.type==="Скид БПЛА").length;
+  const assaultCount=allEvents.filter(e=>e.type==="Штурм" || e.type==="ШТУРМ").length;
+  const destroyedCount=allEvents.filter(e=>e.type==="Знищено позицію").length;
+  const offline=calculateOfflineStats(allEvents);
+
+  const typeCounts={};
+  allEvents.forEach(e=>{
+    if(e.type==="Втрачено зв’язок" || e.type==="Відновлено зв’язок")return;
+    const t=e.type||"Інше";
+    typeCounts[t]=(typeCounts[t]||0)+1;
+  });
+
+  const personnel=p.personnel||[];
+
+  title.textContent="Аналітика позиції: "+p.name;
+
+  let html=`
+    <div class="position-analytics-actions">
+      <button class="blue small" onclick="closePositionAnalyticsModal(); openInfoModal('${p.id}')">Назад до карточки</button>
+    </div>
+
+    <div class="section-title">Поточний стан</div>
+
+    <div class="position-analytics-grid">
+      <div class="position-analytics-card"><b>${esc(p.type||"—")}</b><span>Тип позиції</span></div>
+      <div class="position-analytics-card"><b>${p.destroyed ? "Знищено" : (p.online ? "На зв’язку" : "Немає зв’язку")}</b><span>Поточний зв’язок / стан</span></div>
+      <div class="position-analytics-card"><b>${esc(p.coords||"—")}</b><span>Координати</span></div>
+      <div class="position-analytics-card"><b>${esc(p.village||"—")}</b><span>Н.п.</span></div>
+    </div>
+
+    <div class="section-title">Коротка статистика</div>
+
+    <div class="position-analytics-grid">
+      <div class="position-analytics-card"><b>${allEvents.length}</b><span>Усього подій</span></div>
+      <div class="position-analytics-card"><b>${fireEvents.length}</b><span>Обстрілів / бойових подій</span></div>
+      <div class="position-analytics-card"><b>${fpvCount}</b><span>FPV</span></div>
+      <div class="position-analytics-card"><b>${artilleryCount}</b><span>Артилерія</span></div>
+
+      <div class="position-analytics-card"><b>${mortarCount}</b><span>Міномет</span></div>
+      <div class="position-analytics-card"><b>${dropCount}</b><span>Скиди БПЛА</span></div>
+      <div class="position-analytics-card"><b>${assaultCount}</b><span>Штурм</span></div>
+      <div class="position-analytics-card"><b>${destroyedCount}</b><span>Події знищення</span></div>
+
+      <div class="position-analytics-card"><b>${offline.lostCount}</b><span>Втрат зв’язку</span></div>
+      <div class="position-analytics-card"><b>${formatDurationMs(offline.totalMs)}</b><span>Загальний час без зв’язку</span></div>
+      <div class="position-analytics-card"><b>${formatDurationMs(offline.avgMs)}</b><span>Середній час без зв’язку</span></div>
+      <div class="position-analytics-card"><b>${personnel.length}</b><span>Особового складу</span></div>
+    </div>
+
+    <div class="section-title">Розбивка подій по типах</div>
+    <table class="position-analytics-table">
+      <thead>
+        <tr><th>Тип події</th><th>Кількість</th></tr>
+      </thead>
+      <tbody>
+  `;
+
+  const entries=Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]);
+
+  if(!entries.length){
+    html+=`<tr><td colspan="2">Бойових/оперативних подій немає.</td></tr>`;
+  }else{
+    entries.forEach(([type,count])=>{
+      html+=`<tr><td>${esc(type)}</td><td>${count}</td></tr>`;
+    });
+  }
+
+  html+=`
+      </tbody>
+    </table>
+
+    <div class="section-title">Особовий склад на позиції</div>
+  `;
+
+  if(!personnel.length){
+    html+=`<div class="empty">Особовий склад не доданий.</div>`;
+  }else{
+    html+=`
+      <table class="position-analytics-table">
+        <thead>
+          <tr>
+            <th>Підрозділ</th>
+            <th>Посада</th>
+            <th>Звання</th>
+            <th>ПІБ</th>
+            <th>Позивний</th>
+            <th>Статус</th>
+            <th>Примітка</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    personnel.forEach(x=>{
+      const row=x.status==="200"?"row-200":x.status==="300"?"row-300":x.status==="500"?"row-500":"";
+      html+=`
+        <tr class="${row}">
+          <td>${esc(x.unit||"")}</td>
+          <td>${esc(x.position||"")}</td>
+          <td>${esc(x.rank||"")}</td>
+          <td>${esc(x.name||"")}</td>
+          <td>${esc(x.callsign||"")}</td>
+          <td>${esc(x.status||"")}</td>
+          <td>${esc(x.note||"")}</td>
+        </tr>
+      `;
+    });
+
+    html+=`</tbody></table>`;
+  }
+
+  html+=`
+    <div class="section-title">Історія обстрілів / бойових подій</div>
+    <table class="position-analytics-table">
+      <thead>
+        <tr>
+          <th>Дата / час</th>
+          <th>Тип</th>
+          <th>Подія</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  if(!fireEvents.length){
+    html+=`<tr><td colspan="3">Обстрілів / бойових подій немає.</td></tr>`;
+  }else{
+    [...fireEvents].sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0)).forEach(e=>{
+      html+=`
+        <tr>
+          <td>${eventTimeLabel(e)}</td>
+          <td>${esc(e.type||"")}</td>
+          <td>${esc(e.text||"")}</td>
+        </tr>
+      `;
+    });
+  }
+
+  html+=`
+      </tbody>
+    </table>
+
+    <div class="section-title">Історія втрати / відновлення зв’язку</div>
+    <table class="position-analytics-table">
+      <thead>
+        <tr>
+          <th>Дата / час</th>
+          <th>Тип</th>
+          <th>Подія</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  const commEvents=allEvents.filter(e=>e.type==="Втрачено зв’язок" || e.type==="Відновлено зв’язок");
+
+  if(!commEvents.length){
+    html+=`<tr><td colspan="3">Втрат / відновлень зв’язку не зафіксовано.</td></tr>`;
+  }else{
+    [...commEvents].sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0)).forEach(e=>{
+      html+=`
+        <tr>
+          <td>${eventTimeLabel(e)}</td>
+          <td>${esc(e.type||"")}</td>
+          <td>${esc(e.text||"")}</td>
+        </tr>
+      `;
+    });
+  }
+
+  html+=`
+      </tbody>
+    </table>
+  `;
+
+  body.innerHTML=html;
+  modal.classList.add("show");
+}
+
+function openInfoModal(id){
+  const p=pos(id); if(!p)return;
+  infoTitle.textContent=p.name;
+  const people=p.personnel||[];
+  let html=`
+    <div class="info-actions-right"><button class="green small" onclick="openPositionAnalyticsModal('${p.id}')">Аналітика позиції</button><button class="blue small" onclick="openEditModal('${p.id}')">Редагувати карточку</button></div>
+    <button class="personnel-toggle-btn" onclick="togglePositionInfo()">Показати / сховати дані позиції ▼</button>
+    <div id="positionInfoBlock" class="personnel-block">
+      <div class="section-title">Дані позиції</div>
+      <table class="info-table">
+        <tr><th>Тип</th><td>${esc(p.type||"—")}</td></tr>
+        <tr><th>Координати</th><td>${esc(p.coords||"—")}</td></tr>
+        <tr><th>н.п.</th><td>${esc(p.village||"—")}</td></tr>
+        <tr><th>Зв’язок</th><td>${p.online&&!p.destroyed?"На зв’язку":(p.destroyed?"Знищено":"Немає зв’язку")}</td></tr>
+        <tr><th>Обстріли</th><td>${countFire(p.id)}</td></tr>
+        <tr><th>Остання подія</th><td>${esc(p.lastEvent||"—")}</td>${managementMode ? `<td>${managementActionsHTML(p)}</td>` : ""}</tr>
+      </table>
+    </div>
+    <div class="section-title">Особовий склад</div>`;
+  if(!people.length){html+=`<div class="empty">Військовослужбовці не додані.</div>`}
+  else{
+    html+=`<table class="info-table"><thead><tr><th>Підрозділ</th><th>Посада</th><th>Звання</th><th>ПІБ</th><th>Позивний</th><th>Статус</th><th>Примітка</th></tr></thead><tbody>`;
+    people.forEach(x=>{
+      const row=x.status==="200"?"row-200":x.status==="300"?"row-300":x.status==="500"?"row-500":"";
+      html+=`<tr class="${row}"><td>${esc(x.unit)}</td><td>${esc(x.position)}</td><td>${esc(x.rank)}</td><td>${esc(x.name)}</td><td>${esc(x.callsign)}</td><td>${esc(x.status)}</td><td>${esc(x.note)}</td></tr>`
+    });
+    html+=`</tbody></table>`;
+  }
+  infoBody.innerHTML=html;
+  infoModal.classList.add("show");
+}
+function togglePositionInfo(){positionInfoBlock.classList.toggle("show")}
+function closeInfoModal(){infoModal.classList.remove("show")}
+
+function toggleConn(id){
+  const p=pos(id); if(!p)return;
+  if(p.destroyed){alert("Позиція знищена. Спочатку натисніть Відн.");return}
+  let offline="";
+  if(!p.online&&p.offlineSince)offline=" (без зв’язку "+dur(Date.now()-p.offlineSince)+")";
+  p.online=!p.online;
+  p.offlineSince=p.online?null:Date.now();
+  const type=p.online?"Відновлено зв’язок":"Втрачено зв’язок";
+  const text=nowTime()+" "+type+" "+p.name+(p.online?offline:"")+".";
+  state.events.push({id:uid(),positionId:p.id,positionName:p.name,type,text,createdAt:new Date().toISOString(),approved:false});
+  p.lastEvent=text;save();applyFilters();
+}
+function setDestroyed(id,val){
+  if(val) return markDestroyed(id);
+  return restorePosition(id);
+}
+function deletePosition(id){
+  if(!requireRole('admin'))return;
+  const p=pos(id); if(!p)return;
+  if(!confirm('Видалити позицію "'+p.name+'" і всі її події?'))return;
+  state.positions=state.positions.filter(x=>x.id!==id);
+  state.events=state.events.filter(e=>e.positionId!==id);
+  save();applyFilters();
+}
+
+function buildText(){
+  const p=pos(eventPosition.value); if(!p)return "";
+  const t=eventTime.value.trim(), type=eventType.value, qty=eventQty.value.trim(), dir=eventDirection.value.trim(), losses=eventLosses.value.trim();
+  if(!isFire(type))return (t?t+" ":"")+type+" "+p.name+".";
+  let text=(t?t+" ":"")+type;
+  if(qty)text+=" ("+qty+")";
+  text+=" позиція "+p.name;
+  if(p.coords)text+=" ("+p.coords+")";
+  if(p.village)text+=" "+p.village;
+  if(dir)text+=" з напрямку "+dir;
+  text+=".";
+  if(losses)text+=" "+losses;
+  return text;
+}
+function updatePreview(){preview.textContent=buildText()||"Оберіть позицію та заповніть подію."}
+function addEvent(){
+  if(!requireRole('operator'))return;
+  const p=pos(eventPosition.value);
+  if(!p){
+    alert("Оберіть позицію.");
+    return;
+  }
+
+  const type=eventType.value;
+  const time=eventTime.value.trim();
+
+  if(!time){
+    alert("Вкажіть час або натисніть Час.");
+    return;
+  }
+
+  if(isFire(type) && !eventDirection.value.trim()){
+    if(!confirm("Напрямок не вказаний. Записати без напрямку?")) return;
+  }
+
+  const text=buildText();
+
+  if(editEventId){
+    const e=state.events.find(x=>x.id===editEventId);
+    if(e){
+      e.positionId=p.id;
+      e.positionName=p.name;
+      e.type=type;
+      e.text=text;
+      e.updatedAt=new Date().toISOString();
+      e.approved=false;
+      e.losses=eventLosses.value.trim();
+      p.lastEvent=text;
+    }
+
+    editEventId=null;
+    const btn=document.querySelector('[onclick="addEvent()"]');
+    if(btn) btn.textContent="Записати подію";
+
+    save();
+    applyFilters();
+    hideDrawer("eventPanel");
+    return;
+  }
+
+  state.events.push({
+    id:uid(),
+    positionId:p.id,
+    positionName:p.name,
+    type:type,
+    text:text,
+    createdAt:new Date().toISOString(),
+    approved:false,
+    losses:eventLosses.value.trim()
+  });
+
+  if(type==="Втрачено зв’язок"){
+    p.online=false;
+    p.destroyed=false;
+    p.offlineSince=Date.now();
+  }
+
+  if(type==="Відновлено зв’язок"){
+    p.online=true;
+    p.destroyed=false;
+    p.offlineSince=null;
+  }
+
+  if(type==="Знищено позицію"){
+    p.destroyed=true;
+    p.online=false;
+    p.offlineSince=Date.now();
+  }
+
+  if(type==="Відновлено позицію"){
+    p.destroyed=false;
+    p.online=true;
+    p.offlineSince=null;
+  }
+
+  p.lastEvent=text;
+
+  save();
+  applyFilters();
+  hideDrawer("eventPanel");
+}
+function deleteEvent(id){
+  if(!requireRole('operator'))return;
+  const e=state.events.find(x=>x.id===id); if(!e)return;
+  if(!confirm("Видалити подію?"))return;
+  state.events=state.events.filter(x=>x.id!==id);
+  const p=pos(e.positionId);
+  if(p){const last=[...state.events].reverse().find(x=>x.positionId===p.id);p.lastEvent=last?last.text:"—"}
+  save();applyFilters();
+}
+function clearLog(){
+  if(!requireRole('admin'))return;if(!confirm("Очистити журнал?"))return;state.events=[];state.positions.forEach(p=>p.lastEvent="—");save();applyFilters()}
+function quick(v){
+  if(v==="time")eventTime.value=nowTime();
+  else{
+    eventType.value=v;
+    if(v==="Скид БПЛА"||v==="FPV")eventQty.value="1 од.";
+    if(v==="Міномет")eventQty.value="1 міна 120мм";
+    if(v==="Артилерія")eventQty.value="1 снаряд 152мм";
+    if(v==="ШТУРМ")eventQty.value="група";
+  }
+  updatePreview();
+}
+function changeQty(d){
+  const m=eventQty.value.match(/(\d+)/);
+  if(m)eventQty.value=eventQty.value.replace(/\d+/,Math.max(1,parseInt(m[1])+d));
+  else eventQty.value="1 од.";
+  updatePreview();
+}
+function getSelectedTypes(){return [...document.querySelectorAll('#typeChecks input:checked')].map(x=>x.value)}
+function clearTypeChecks(){document.querySelectorAll('#typeChecks input').forEach(x=>x.checked=false);applyFilters()}
+function applyFilters(){
+  const q=(searchBox?.value||"").toLowerCase().trim();
+  const st=filterStatus?.value||"all";
+  const selected=getSelectedTypes();
+  filtered=state.positions.filter(p=>{
+    const txt=(p.name+" "+p.coords+" "+p.village+" "+p.type).toLowerCase();
+    if(q&&!txt.includes(q))return false;
+    if(selected.length&&!selected.includes(p.type))return false;
+    if(st==="online"&&(!p.online||p.destroyed))return false;
+    if(st==="offline"&&(p.online||p.destroyed))return false;
+    if(st==="destroyed"&&!p.destroyed)return false;
+    return true;
+  });
+  const sort=sortMode?.value||"problem";
+  filtered.sort((a,b)=>{
+    if(sort==="name")return a.name.localeCompare(b.name,"uk");
+    if(sort==="events")return countFire(b.id)-countFire(a.id);
+    const score=p=>(p.destroyed?3:(!p.online?2:(countFire(p.id)>0?1:0)));
+    return score(b)-score(a);
+  });
+  const max=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
+  if(page>max)page=max;
+  renderAll();
+}
+function prevPage(){if(page>1){page--;renderPositions()}}
+function nextPage(){const max=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));if(page<max){page++;renderPositions()}}
+function renderStats(){
+  stTotal.textContent=state.positions.length;
+  stOnline.textContent=state.positions.filter(p=>p.online&&!p.destroyed).length;
+  stOffline.textContent=state.positions.filter(p=>!p.online&&!p.destroyed).length;
+  stDestroyed.textContent=state.positions.filter(p=>p.destroyed).length;
+  stEvents.textContent=state.events.length;
+}
+
+function toggleManagementMode(){
+  if(!requireRole("operator"))return;
+
+  managementMode=!managementMode;
+
+  const btn=document.getElementById("manageModeBtn");
+  if(btn){
+    btn.textContent = managementMode ? "Закрити керування" : "Керування";
+    btn.classList.toggle("active", managementMode);
+  }
+
+  renderPositions();
+}
+
+
+function managementActionsHTML(p){
+  if(!managementMode)return "";
+
+  return `
+    <div class="row-actions">
+      <button class="blue small" onclick="event.stopPropagation(); openEditModal('${p.id}')">Редаг.</button>
+      <button class="red small" onclick="event.stopPropagation(); markDestroyed('${p.id}')">Знищ.</button>
+      <button class="green small" onclick="event.stopPropagation(); restorePosition('${p.id}')">Відн.</button>
+      <button class="red small" onclick="event.stopPropagation(); deletePosition('${p.id}')">×</button>
+    </div>
+  `;
+}
+
+function markDestroyed(id){
+  if(!requireRole("operator"))return;
+
+  const p=pos(id);
+  if(!p)return;
+
+  if(!confirm("Позначити позицію «"+p.name+"» як знищену?"))return;
+
+  p.destroyed=true;
+  p.online=false;
+  p.offlineSince=Date.now();
+
+  const text=nowTime()+" Знищено позицію "+p.name+".";
+  p.lastEvent=text;
+
+  state.events.push({
+    id:uid(),
+    positionId:p.id,
+    positionName:p.name,
+    type:"Знищено позицію",
+    text,
+    createdAt:new Date().toISOString(),
+    approved:false
+  });
+
+  save();
+  applyFilters();
+  renderLog();
+}
+
+function restorePosition(id){
+  if(!requireRole("operator"))return;
+
+  const p=pos(id);
+  if(!p)return;
+
+  if(!confirm("Відновити позицію «"+p.name+"» / повернути в роботу?"))return;
+
+  p.destroyed=false;
+  p.online=true;
+  p.offlineSince=null;
+
+  const text=nowTime()+" Відновлено позицію "+p.name+".";
+  p.lastEvent=text;
+
+  state.events.push({
+    id:uid(),
+    positionId:p.id,
+    positionName:p.name,
+    type:"Відновлено позицію",
+    text,
+    createdAt:new Date().toISOString(),
+    approved:false
+  });
+
+  save();
+  applyFilters();
+  renderLog();
+}
+
+function renderPositions(){
+  const arr=filtered.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE);
+  positionsBody.innerHTML="";
+  actionHeader.classList.toggle("action-hidden",!managementMode);
+
+  if(!arr.length)positionsBody.innerHTML=`<tr><td colspan="${managementMode ? 7 : 6}" class="empty">Позицій ще немає або нічого не знайдено.</td></tr>`;
+
+  arr.forEach(p=>{
+    const c=countFire(p.id);
+    const tr=document.createElement("tr");
+    if(p.destroyed)tr.className="danger";else if(c>0)tr.className="warn";
+    const badge=p.destroyed?'<span class="badge red">Знищено</span>':(p.online?'<span class="badge green">Активна</span>':'<span class="badge yellow">Без зв’язку</span>');
+    const timer=!p.online&&p.offlineSince?'<span class="timer" data-timer="'+p.id+'">'+dur(Date.now()-p.offlineSince)+'</span>':'';
+    tr.innerHTML=`
+      <td><div class="posname" onclick="openInfoModal('${p.id}')">${esc(p.name)}</div><div class="meta">${esc(p.type)}</div></td>
+      <td><div>${esc(p.coords||"—")}</div><div class="meta">${esc(p.village||"—")}</div></td>
+      <td><span class="lamp ${p.online&&!p.destroyed?'online':'offline'}" onclick="toggleConn('${p.id}')"></span>${p.destroyed?'Знищено':(p.online?'На зв’язку':'Немає зв’язку')}${timer}</td>
+      <td>${badge}</td>
+      <td>${c}</td>
+      <td>${esc(p.lastEvent||"—")}</td>
+      ${managementMode ? `<td>${managementActionsHTML(p)}</td>` : ""}`;
+    positionsBody.appendChild(tr);
+  });
+  const max=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
+  pageInfo.textContent=`Сторінка ${page} / ${max} • показано ${arr.length} з ${filtered.length}`;
+}
+function renderSelect(){
+  const old=eventPosition.value;
+  eventPosition.innerHTML=state.positions.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+  if(old&&state.positions.some(p=>p.id===old))eventPosition.value=old;
+}
+
+function approveEvent(id){
+  if(!requireRole('operator'))return;
+  const e=state.events.find(x=>x.id===id);
+  if(!e)return;
+  e.approved=true;
+  save();
+  renderLog();
+}
+
+function editEvent(id){
+  if(!requireRole('operator'))return;
+  const e=state.events.find(x=>x.id===id);
+  if(!e)return;
+
+  editEventId=id;
+
+  const p=pos(e.positionId);
+  if(p){
+    eventPosition.value=e.positionId;
+  }
+
+  eventType.value=e.type || "Інше";
+
+  const timeMatch=(e.text||"").match(/^(\d{1,2}\.\d{2})/);
+  eventTime.value=timeMatch ? timeMatch[1] : "";
+
+  const dirMatch=(e.text||"").match(/з напрямку\s+(.+?)\./i);
+  eventDirection.value=dirMatch ? dirMatch[1] : "";
+
+  const qtyMatch=(e.text||"").match(/\(([^)]+)\)/);
+  eventQty.value=qtyMatch ? qtyMatch[1] : "1 од.";
+
+  eventLosses.value=e.losses || "Втрати о/с , овт та мтз - уточняються.";
+
+  const ep=document.getElementById("eventPanel");
+  if(ep){
+    document.getElementById("logPanel")?.classList.add("hidden");
+    ep.classList.remove("hidden");
+    updateFloatingBackdrop();
+  }
+
+  const btn=document.querySelector('[onclick="addEvent()"]');
+  if(btn)btn.textContent="Зберегти зміни події";
+
+  updatePreview();
+  document.getElementById("eventPanel")?.scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+function resetEventEditMode(){
+  editEventId=null;
+  const btn=document.querySelector('[onclick="addEvent()"]');
+  if(btn)btn.textContent="Записати подію";
+}
+
+
+
+
+
+
+function togglePeriodPanel(){ toggleJournalOptions(); }
+
+function toggleJournalOptions(){
+  const panel=document.getElementById("journalOptionsPanel");
+  const arrow=document.getElementById("journalToggleArrow");
+  if(!panel)return;
+  panel.classList.toggle("hidden");
+  if(arrow)arrow.textContent = panel.classList.contains("hidden") ? "▾" : "▴";
+}
+
+function getJournalPeriod(){
+  const from = document.getElementById("journalDateFrom")?.value || "";
+  const to = document.getElementById("journalDateTo")?.value || "";
+
+  let fromDate = null;
+  let toDate = null;
+
+  if(from){
+    fromDate = new Date(from + "T00:00:00");
+  }
+
+  if(to){
+    toDate = new Date(to + "T23:59:59");
+  }
+
+  return {from, to, fromDate, toDate};
+}
+
+function isEventInJournalPeriod(e){
+  const {fromDate, toDate} = getJournalPeriod();
+  const d = new Date(e.createdAt || 0);
+
+  if(fromDate && d < fromDate) return false;
+  if(toDate && d > toDate) return false;
+
+  return true;
+}
+
+function getEventsForSelectedPeriod(options={}){
+  let events = state.events || [];
+
+  if(options.excludeConnection){
+    events = events.filter(e=>!isConnectionEventForAnalytics(e));
+  }
+
+  return events.filter(isEventInJournalPeriod);
+}
+
+function setJournalPeriodToday(){
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const dd = String(d.getDate()).padStart(2,"0");
+  const val = `${yyyy}-${mm}-${dd}`;
+
+  const from = document.getElementById("journalDateFrom");
+  const to = document.getElementById("journalDateTo");
+
+  if(from) from.value = val;
+  if(to) to.value = val;
+
+  renderLog();
+  renderAnalyticsIfOpen();
+}
+
+function clearJournalPeriod(){
+  const from = document.getElementById("journalDateFrom");
+  const to = document.getElementById("journalDateTo");
+
+  if(from) from.value = "";
+  if(to) to.value = "";
+
+  renderLog();
+  renderAnalyticsIfOpen();
+}
+
+function renderAnalyticsIfOpen(){
+  const modal = document.getElementById("analyticsModal");
+  if(modal && modal.classList.contains("show")){
+    renderAnalytics();
+  }
+}
+
+function getPeriodLabel(){
+  const {from, to} = getJournalPeriod();
+
+  if(from && to) return `Період: ${from.split("-").reverse().join(".")} — ${to.split("-").reverse().join(".")}`;
+  if(from) return `Період: з ${from.split("-").reverse().join(".")}`;
+  if(to) return `Період: по ${to.split("-").reverse().join(".")}`;
+
+  return "Період: за весь час";
+}
+
+function renderLog(){
+  log.innerHTML="";
+
+  if(!state.events.length){
+    log.innerHTML='<div class="empty">Подій немає.</div>';
+    return;
+  }
+
+  const hideConnectionLogs =
+    document.getElementById("hideConnectionLogs")?.checked;
+
+  const showCombatOnly =
+    document.getElementById("showCombatOnly")?.checked;
+
+  const combatTypes = [
+    "FPV",
+    "Міномет",
+    "Артилерія",
+    "Штурм",
+    "ШТУРМ",
+    "Скид БПЛА",
+    "РСЗВ",
+    "Танк",
+    "Стріл. зброя"
+  ];
+
+  const eventsForPeriod = getEventsForSelectedPeriod();
+
+  const ordered=[...eventsForPeriod].sort((a,b)=>{
+    if((a.approved?1:0)!==(b.approved?1:0)){
+      return (a.approved?1:0)-(b.approved?1:0);
+    }
+    return new Date(b.createdAt||0)-new Date(a.createdAt||0);
+  });
+
+  const filteredEvents = ordered.filter(e=>{
+    if(
+      hideConnectionLogs &&
+      (
+        e.type==="Втрачено зв’язок" ||
+        e.type==="Відновлено зв’язок"
+      )
+    ){
+      return false;
+    }
+
+    if(showCombatOnly && !combatTypes.includes(e.type)){
+      return false;
+    }
+
+    return true;
+  });
+
+  if(!filteredEvents.length){
+    log.innerHTML='<div class="empty">За вибраним періодом / фільтром подій немає.</div>';
+    return;
+  }
+
+  filteredEvents.slice(0,120).forEach(e=>{
+    const div=document.createElement("div");
+    div.className="logitem " + (e.approved ? "approved" : "pending");
+
+    const badge=e.approved
+      ? '<span class="log-badge approved">ПІДТВ.</span>'
+      : '<span class="log-badge pending">НЕ ПІДТВ.</span>';
+
+    div.innerHTML=`
+      <div class="log-actions">
+        <button class="log-edit" onclick="editEvent('${e.id}')" title="Редагувати">✎</button>
+        <button class="log-approve" onclick="approveEvent('${e.id}')" title="Затвердити">✓</button>
+        <button class="log-del" onclick="deleteEvent('${e.id}')" title="Видалити">×</button>
+      </div>
+
+      <div class="logtime">
+        ${new Date(e.createdAt).toLocaleString("uk-UA")} • ${esc(e.positionName)} • ${esc(e.type)} ${badge}
+      </div>
+
+      <div class="logtext">${esc(e.text)}</div>
+    `;
+
+    log.appendChild(div);
+  });
+}
+
+function openAnalyticsModal(){
+  renderAnalytics();
+  analyticsModal.classList.add("show");
+}
+
+function closeAnalyticsModal(){
+  analyticsModal.classList.remove("show");
+}
+
+function analyticsIsCombat(type){
+  return [
+    "FPV",
+    "Скид БПЛА",
+    "Міномет",
+    "Артилерія",
+    "РСЗВ",
+    "Танк",
+    "Стріл. зброя",
+    "Штурм",
+    "ШТУРМ"
+  ].includes(type);
+}
+
+
+
+function isConnectionEventForAnalytics(e){
+  return e && (
+    e.type === "Втрачено зв’язок" ||
+    e.type === "Відновлено зв’язок"
+  );
+}
+
+
+function analyticsSummaryText(p){
+  const parts = [];
+  parts.push("бойові: " + p.combat);
+
+  const ordered = [
+    ["FPV", "FPV"],
+    ["Скид БПЛА", "скиди"],
+    ["Міномет", "міномет"],
+    ["Артилерія", "арт."],
+    ["РСЗВ", "РСЗВ"],
+    ["Танк", "танк"],
+    ["Стріл. зброя", "стріл."],
+    ["Штурм", "штурм"],
+    ["ШТУРМ", "штурм"],
+    ["Знищено позицію", "знищення"],
+    ["Відновлено позицію", "відновлення"],
+    ["Інше", "інше"]
+  ];
+
+  ordered.forEach(([type,label])=>{
+    const n = p.typeCounts?.[type] || 0;
+    if(n>0) parts.push(label + ": " + n);
+  });
+
+  Object.entries(p.typeCounts || {}).forEach(([type,n])=>{
+    if(n>0 && !ordered.some(x=>x[0]===type) && type!=="Втрачено зв’язок" && type!=="Відновлено зв’язок"){
+      parts.push(type + ": " + n);
+    }
+  });
+
+  return parts.join("; ");
+}
+
+function getAnalyticsData(){
+  const events = getEventsForSelectedPeriod
+    ? getEventsForSelectedPeriod({excludeConnection:true})
+    : (state.events || []).filter(e=>!isConnectionEventForAnalytics(e));
+
+  const positions = state.positions || [];
+
+  const stats = {
+    total: events.length,
+    combat: 0,
+    fpv: 0,
+    drops: 0,
+    mortar: 0,
+    artillery: 0,
+    rszo: 0,
+    tank: 0,
+    rifle: 0,
+    assault: 0,
+    destroyed: 0
+  };
+
+  const byPosition = {};
+
+  positions.forEach(p=>{
+    byPosition[p.id]={
+      id:p.id,
+      name:p.name || "—",
+      type:p.type || "—",
+      coords:p.coords || "—",
+      village:p.village || "—",
+      status:p.destroyed ? "Знищено" : (p.online ? "Активна" : "Немає зв’язку"),
+      total:0,
+      combat:0,
+      fpv:0,
+      drops:0,
+      mortar:0,
+      artillery:0,
+      rszo:0,
+      tank:0,
+      rifle:0,
+      assault:0,
+      destroyed:0,
+      typeCounts:{}
+    };
+  });
+
+  events.forEach(e=>{
+    const type=e.type || "Інше";
+
+    if(type==="FPV") stats.fpv++;
+    if(type==="Скид БПЛА") stats.drops++;
+    if(type==="Міномет") stats.mortar++;
+    if(type==="Артилерія") stats.artillery++;
+    if(type==="РСЗВ") stats.rszo++;
+    if(type==="Танк") stats.tank++;
+    if(type==="Стріл. зброя") stats.rifle++;
+    if(type==="Штурм" || type==="ШТУРМ") stats.assault++;
+    if(type==="Знищено позицію") stats.destroyed++;
+    if(analyticsIsCombat(type)) stats.combat++;
+
+    if(!byPosition[e.positionId]){
+      byPosition[e.positionId]={
+        id:e.positionId,
+        name:e.positionName || "Невідома позиція",
+        type:"—",
+        coords:"—",
+        village:"—",
+        status:"—",
+        total:0,
+        combat:0,
+        fpv:0,
+        drops:0,
+        mortar:0,
+        artillery:0,
+        rszo:0,
+        tank:0,
+        rifle:0,
+        assault:0,
+        destroyed:0,
+        typeCounts:{}
+      };
+    }
+
+    const p=byPosition[e.positionId];
+    p.total++;
+    p.typeCounts[type]=(p.typeCounts[type]||0)+1;
+
+    if(type==="FPV") p.fpv++;
+    if(type==="Скид БПЛА") p.drops++;
+    if(type==="Міномет") p.mortar++;
+    if(type==="Артилерія") p.artillery++;
+    if(type==="РСЗВ") p.rszo++;
+    if(type==="Танк") p.tank++;
+    if(type==="Стріл. зброя") p.rifle++;
+    if(type==="Штурм" || type==="ШТУРМ") p.assault++;
+    if(type==="Знищено позицію") p.destroyed++;
+    if(analyticsIsCombat(type)) p.combat++;
+  });
+
+  const rows = Object.values(byPosition)
+    .sort((a,b)=>{
+      const score = x => (x.status==="Знищено"?1000:0) + x.combat*10 + x.total;
+      const diff = score(b)-score(a);
+      return diff || String(a.name).localeCompare(String(b.name), "uk");
+    });
+
+  return {stats, rows, events};
+}
+
+function downloadTextFile(filename, content, mime){
+  const blob = new Blob([content], {type:mime});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+function csvCell(value){
+  const s = String(value ?? "");
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+
+function exportAnalyticsCSV(){
+  const {stats, rows, events} = getAnalyticsData();
+
+  const lines = [];
+  lines.push(["Період", getPeriodLabel(), ""].map(csvCell).join(";"));
+  lines.push(["Розділ","Показник","Значення"].map(csvCell).join(";"));
+  lines.push(["Загальна статистика","Усього подій",stats.total].map(csvCell).join(";"));
+  lines.push(["Загальна статистика","Бойові події",stats.combat].map(csvCell).join(";"));
+  lines.push(["Загальна статистика","FPV",stats.fpv].map(csvCell).join(";"));
+  lines.push(["Загальна статистика","Скиди БПЛА",stats.drops].map(csvCell).join(";"));
+  lines.push(["Загальна статистика","Міномет",stats.mortar].map(csvCell).join(";"));
+  lines.push(["Загальна статистика","Артилерія",stats.artillery].map(csvCell).join(";"));
+  lines.push(["Загальна статистика","РСЗВ",stats.rszo].map(csvCell).join(";"));
+  lines.push(["Загальна статистика","Танк",stats.tank].map(csvCell).join(";"));
+  lines.push(["Загальна статистика","Штурм",stats.assault].map(csvCell).join(";"));
+  lines.push(["Загальна статистика","Знищення позицій",stats.destroyed].map(csvCell).join(";"));
+  lines.push("");
+
+  lines.push(["Позиція","Тип","Координати","н.п.","Статус","Усього","Бойові","FPV","Скиди","Міномет","Артилерія","РСЗВ","Танк","Стріл. зброя","Штурм","Знищення"].map(csvCell).join(";"));
+  rows.forEach(p=>{
+    lines.push([
+      p.name,p.type,p.coords,p.village,p.status,p.total,p.combat,p.fpv,p.drops,p.mortar,p.artillery,p.rszo,p.tank,p.rifle,p.assault,p.destroyed
+    ].map(csvCell).join(";"));
+  });
+  lines.push("");
+
+  lines.push(["Дата/час","Позиція","Тип","Текст"].map(csvCell).join(";"));
+  events.forEach(e=>{
+    lines.push([
+      new Date(e.createdAt).toLocaleString("uk-UA"),
+      e.positionName,
+      e.type,
+      e.text
+    ].map(csvCell).join(";"));
+  });
+
+  const now = new Date();
+  const name = "Аналітика_обстрілів_" + now.toLocaleDateString("uk-UA").replaceAll(".","-") + ".csv";
+  downloadTextFile(name, "\ufeff" + lines.join("\n"), "text/csv;charset=utf-8");
+}
+
+function exportAnalyticsHTML(){
+  const {stats, rows, events} = getAnalyticsData();
+  const now = new Date();
+
+  const statRows = [
+    ["Усього подій", stats.total],
+    ["Бойові події", stats.combat],
+    ["FPV", stats.fpv],
+    ["Скиди БПЛА", stats.drops],
+    ["Міномет", stats.mortar],
+    ["Артилерія", stats.artillery],
+    ["РСЗВ", stats.rszo],
+    ["Танк", stats.tank],
+    ["Штурм", stats.assault],
+    ["Знищення позицій", stats.destroyed]
+  ];
+
+  let report = `
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>Аналітика обстрілів</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f4f6f8;color:#111;padding:24px}
+h1,h2{color:#0f2a3d}
+table{width:100%;border-collapse:collapse;margin:14px 0 24px;background:white}
+th,td{border:1px solid #b8c3cf;padding:8px;text-align:left;vertical-align:top}
+th{background:#dfeaf3}
+.bad{background:#ffe3e3}
+.good{background:#e4f8ea}
+.small{color:#555;font-size:12px}
+
+.period-filters{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  padding:10px 12px;
+  border-bottom:1px solid var(--line);
+}
+
+.period-filters label{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color:#d7e7ff;
+  font-weight:800;
+}
+
+.period-filters input[type="date"]{
+  width:160px;
+  padding:8px;
+}
+
+.period-note{
+  color:var(--muted);
+  font-size:12px;
+  padding:0 12px 10px;
+}
+
+
+.period-toggle-wrap{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 12px 0;
+}
+
+.period-panel.hidden{
+  display:none;
+}
+
+
+.journal-title-toggle{
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  user-select:none;
+}
+
+.journal-title-toggle:hover{
+  color:#f8c943;
+}
+
+
+.journal-options-panel.hidden{
+  display:none!important;
+}
+
+.journal-options-panel{
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  background:rgba(10,25,37,.55);
+}
+
+.journal-title-toggle{
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  user-select:none;
+}
+
+.journal-title-toggle:hover{
+  color:#f8c943;
+}
+
+
+.journal-header-wrap{
+  padding:18px 18px 10px 18px;
+  border-bottom:1px solid rgba(120,170,220,.18);
+}
+
+.journal-options-panel{
+  margin-top:14px;
+  padding:14px 0 4px 0;
+  background:transparent;
+  border:none;
+}
+
+.period-filters{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.journal-filters{
+  display:flex;
+  align-items:center;
+  gap:24px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+
+.toggle-line{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.journal-options-panel.hidden{
+  display:none!important;
+}
+
+
+/* FIXED JOURNAL LAYOUT */
+#logPanel{
+  display:block;
+}
+
+#logPanel.hidden{
+  display:none!important;
+}
+
+.journal-top-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:16px 18px 10px 18px;
+  border-bottom:1px solid var(--line);
+}
+
+.journal-title-toggle{
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  user-select:none;
+  font-size:24px;
+  font-weight:900;
+}
+
+.journal-title-toggle:hover{
+  color:#f8c943;
+}
+
+.journal-buttons{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-shrink:0;
+}
+
+.journal-options-panel{
+  display:block;
+  padding:12px 18px 14px 18px;
+  border-bottom:1px solid var(--line);
+  background:rgba(10,25,37,.45);
+}
+
+.journal-options-panel.hidden{
+  display:none!important;
+}
+
+.period-filters{
+  display:flex!important;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  padding:0!important;
+  margin:0 0 8px 0!important;
+  border:0!important;
+}
+
+.period-note{
+  padding:0!important;
+  margin:4px 0 10px 0!important;
+}
+
+.journal-filters{
+  display:flex!important;
+  align-items:center;
+  gap:24px;
+  flex-wrap:wrap;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+}
+
+.toggle-line{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:800;
+}
+
+#log{
+  display:block;
+  width:100%;
+}
+
+
+#cardModal.show,
+#infoModal.show,
+#analyticsModal.show{
+  display:flex!important;
+  z-index:9999!important;
+}
+
+#cardModal .modal{
+  z-index:10000!important;
+}
+
+
+/* CARD MODAL HARD FIX */
+#cardModal.show{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:18px!important;
+}
+
+#cardModal .modal{
+  width:min(1180px,96vw)!important;
+  max-height:92vh!important;
+  overflow:auto!important;
+  position:relative!important;
+}
+
+#cardModal .modal-body{
+  display:block!important;
+  padding:16px!important;
+}
+
+#cardModal .modal-grid{
+  display:grid!important;
+  grid-template-columns:170px 1fr 1fr 1fr!important;
+  gap:10px!important;
+  margin-bottom:12px!important;
+}
+
+#cardModal #personnelList{
+  display:block!important;
+  width:100%!important;
+}
+
+#cardModal .person-card{
+  display:block!important;
+  width:100%!important;
+  clear:both!important;
+  margin:10px 0!important;
+}
+
+#cardModal .person-grid{
+  display:grid!important;
+  grid-template-columns:1fr 1fr 1fr 1.5fr 1fr!important;
+  gap:8px!important;
+}
+
+#cardModal .person-status-grid{
+  display:grid!important;
+  grid-template-columns:160px 1fr!important;
+  gap:8px!important;
+  margin-top:8px!important;
+}
+
+#cardModal .person-transfer-row{
+  display:grid!important;
+  grid-template-columns:1fr auto auto!important;
+  gap:8px!important;
+  margin-top:8px!important;
+}
+
+#cardModal .modal-actions{
+  display:flex!important;
+  justify-content:flex-end!important;
+  gap:10px!important;
+  margin-top:16px!important;
+  position:static!important;
+}
+
+@media(max-width:1100px){
+  #cardModal .modal-grid,
+  #cardModal .person-grid,
+  #cardModal .person-status-grid,
+  #cardModal .person-transfer-row{
+    grid-template-columns:1fr!important;
+  }
+}
+
+
+.import-result{
+  white-space:pre-wrap;
+  background:#0e1c27;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px;
+  margin-top:10px;
+  color:#d7e7ff;
+  line-height:1.45;
+}
+
+
+.type-checks{
+  max-height:95px;
+  overflow:auto;
+}
+.type-checks label{
+  white-space:nowrap;
+}
+
+
+h1{
+  white-space:nowrap!important;
+  line-height:1.1!important;
+}
+
+
+.position-analytics-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:14px;
+}
+
+.position-analytics-card{
+  background:#0e1c27;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:12px;
+}
+
+.position-analytics-card b{
+  display:block;
+  font-size:24px;
+  margin-bottom:4px;
+}
+
+.position-analytics-card span{
+  color:var(--muted);
+  font-size:13px;
+}
+
+.position-analytics-table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+.position-analytics-table th,
+.position-analytics-table td{
+  border:1px solid var(--line);
+  padding:8px;
+  text-align:left;
+  vertical-align:top;
+}
+
+.position-analytics-table th{
+  background:#20384c;
+}
+
+.position-analytics-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-bottom:10px;
+}
+
+@media(max-width:900px){
+  .position-analytics-grid{
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+
+
+#positionAnalyticsModal.show{
+  display:flex!important;
+  z-index:11000!important;
+}
+
+#positionAnalyticsModal .modal{
+  z-index:11001!important;
+}
+
+
+/* Центрування і відступи */
+.app,
+.container,
+.wrap,
+main{
+  max-width: 1480px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 22px !important;
+  padding-right: 22px !important;
+  box-sizing:border-box !important;
+}
+
+/* Таблиця не прилипає */
+.table-wrap,
+.board-wrap,
+.positions-wrap{
+  border-radius:18px !important;
+  overflow:hidden !important;
+}
+
+/* Невеликий повітряний відступ зверху */
+body{
+  padding-top:8px !important;
+}
+
+
+/* AUTH / ADMIN */
+.auth-screen{
+  position:fixed;
+  inset:0;
+  z-index:50000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,#06111b,#071b2b);
+  padding:20px;
+}
+
+.auth-screen.hidden{
+  display:none!important;
+}
+
+.auth-box{
+  width:min(440px,94vw);
+  background:#132638;
+  border:1px solid #31516a;
+  border-radius:22px;
+  padding:24px;
+  box-shadow:0 20px 80px rgba(0,0,0,.55);
+}
+
+.auth-title{
+  font-size:28px;
+  font-weight:900;
+  margin-bottom:8px;
+}
+
+.auth-subtitle{
+  color:#a7c7df;
+  margin-bottom:18px;
+  line-height:1.35;
+}
+
+.auth-box input,
+.auth-box select{
+  width:100%;
+  margin-bottom:10px;
+}
+
+.auth-error{
+  color:#ff8ca0;
+  font-weight:800;
+  min-height:22px;
+  margin:8px 0;
+}
+
+.auth-info{
+  margin-top:12px;
+  color:#a7c7df;
+  font-size:13px;
+  line-height:1.35;
+}
+
+.user-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:9px 12px;
+  border-radius:12px;
+  background:#102233;
+  border:1px solid #31516a;
+  color:#d7e7ff;
+  font-weight:900;
+}
+
+.admin-users-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr 150px auto;
+  gap:8px;
+  align-items:center;
+  margin-top:10px;
+}
+
+.admin-user-row{
+  display:grid;
+  grid-template-columns:1fr 1fr 150px auto;
+  gap:8px;
+  align-items:center;
+  padding:8px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  margin-top:8px;
+  background:#0e1c27;
+}
+
+.admin-hidden{
+  display:none!important;
+}
+
+@media(max-width:900px){
+  .admin-users-grid,
+  .admin-user-row{
+    grid-template-columns:1fr;
+  }
+}
+
+
+.admin-form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr 160px auto;
+  gap:10px;
+  align-items:center;
+  margin-bottom:14px;
+}
+
+.admin-user-row-v2{
+  display:grid;
+  grid-template-columns:1fr 160px auto auto;
+  gap:10px;
+  align-items:center;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#0e1c27;
+  margin-bottom:8px;
+}
+
+.admin-user-row-v2 b{
+  font-size:16px;
+}
+
+.admin-user-row-v2 .role-pill{
+  display:inline-block;
+  padding:5px 10px;
+  border-radius:999px;
+  background:#20384c;
+  font-weight:900;
+}
+
+@media(max-width:900px){
+  .admin-form-grid,
+  .admin-user-row-v2{
+    grid-template-columns:1fr;
+  }
+}
+
+
+#adminModal.show{
+  display:flex!important;
+  z-index:12000!important;
+}
+#adminModal .modal{
+  z-index:12001!important;
+}
+
+
+/* ADMIN MODAL FIX */
+#adminModal.show{
+  display:flex!important;
+  z-index:60000!important;
+}
+#adminModal .modal{
+  z-index:60001!important;
+  width:min(1050px,94vw)!important;
+  max-height:90vh!important;
+  overflow:auto!important;
+}
+.admin-form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr 170px auto;
+  gap:10px;
+  align-items:center;
+  margin-bottom:14px;
+}
+.admin-user-row-v2{
+  display:grid;
+  grid-template-columns:1fr 170px auto auto;
+  gap:10px;
+  align-items:center;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#0e1c27;
+  margin-bottom:8px;
+}
+@media(max-width:900px){
+  .admin-form-grid,
+  .admin-user-row-v2{
+    grid-template-columns:1fr;
+  }
+}
+
+
+#managePanel.hidden{display:none!important;}
+#managePanel{
+  display:block;
+}
+
+
+#manageModeBtn.active{
+  background:#f8c943!important;
+  color:#06111b!important;
+}
+
+.row-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.row-actions button{
+  white-space:nowrap;
+}
+
+
+/* COMPACT TOP ACTIONS FIX */
+.header,
+.topbar,
+.top-row{
+  align-items:flex-start!important;
+}
+
+.actions,
+.top-actions,
+.header-actions{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+  justify-content:flex-end!important;
+  align-items:flex-start!important;
+  max-width:760px!important;
+}
+
+.actions button,
+.top-actions button,
+.header-actions button,
+.actions .user-badge,
+.top-actions .user-badge,
+.header-actions .user-badge{
+  white-space:nowrap!important;
+  flex:0 0 auto!important;
+}
+
+.user-badge{
+  max-width:160px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+.admin-side-actions{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+  align-items:stretch!important;
+  margin-left:4px!important;
+}
+
+.admin-side-actions button{
+  width:150px!important;
+  text-align:center!important;
+}
+
+.main-actions-line{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+  justify-content:flex-end!important;
+  align-items:center!important;
+}
+
+@media(max-width:1200px){
+  .actions,
+  .top-actions,
+  .header-actions{
+    max-width:100%!important;
+    justify-content:flex-start!important;
+  }
+
+  .admin-side-actions{
+    flex-direction:row!important;
+    width:100%!important;
+  }
+
+  .admin-side-actions button{
+    width:auto!important;
+  }
+}
+
+
+/* TOP BUTTONS FINAL LAYOUT */
+.actions,
+.top-actions,
+.header-actions{
+  display:grid!important;
+  grid-template-columns:1fr auto!important;
+  gap:12px!important;
+  align-items:start!important;
+  max-width:860px!important;
+}
+
+.top-actions-row{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:8px!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  min-width:0!important;
+}
+
+.top-actions-row button,
+.top-actions-row .user-badge{
+  white-space:nowrap!important;
+  flex:0 0 auto!important;
+}
+
+.right-vertical-actions{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+  align-items:stretch!important;
+}
+
+.right-vertical-actions button{
+  width:150px!important;
+  white-space:nowrap!important;
+  text-align:center!important;
+}
+
+.user-badge{
+  max-width:145px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+@media(max-width:1350px){
+  .actions,
+  .top-actions,
+  .header-actions{
+    grid-template-columns:1fr!important;
+  }
+  .top-actions-row{
+    flex-wrap:wrap!important;
+    justify-content:flex-end!important;
+  }
+  .right-vertical-actions{
+    flex-direction:row!important;
+    justify-content:flex-end!important;
+  }
+  .right-vertical-actions button{
+    width:auto!important;
+  }
+}
+
+
+/* FINAL LAYOUT FIX: board centered, buttons visible */
+body{
+  overflow-x:auto!important;
+}
+
+.app,
+.container,
+.wrap,
+main{
+  max-width:1480px!important;
+  width:1480px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  padding-left:22px!important;
+  padding-right:22px!important;
+  box-sizing:border-box!important;
+}
+
+.header,
+.topbar,
+.top-row{
+  display:grid!important;
+  grid-template-columns: 1fr auto 520px 155px!important;
+  gap:12px!important;
+  align-items:start!important;
+  width:100%!important;
+  margin-bottom:14px!important;
+}
+
+h1{
+  white-space:nowrap!important;
+  line-height:1.1!important;
+  margin:0!important;
+}
+
+.clock,
+#clock,
+.current-time{
+  justify-self:center!important;
+  white-space:nowrap!important;
+}
+
+.actions,
+.top-actions,
+.header-actions{
+  display:contents!important;
+}
+
+.top-actions-row{
+  grid-column:3!important;
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+  justify-content:flex-end!important;
+  align-items:center!important;
+  max-width:520px!important;
+}
+
+.right-vertical-actions{
+  grid-column:4!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+  align-items:stretch!important;
+  width:155px!important;
+}
+
+.right-vertical-actions button{
+  width:155px!important;
+  white-space:nowrap!important;
+  text-align:center!important;
+}
+
+.top-actions-row button,
+.top-actions-row .user-badge{
+  white-space:nowrap!important;
+  flex:0 0 auto!important;
+}
+
+.user-badge{
+  max-width:150px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+.cards,
+.stats,
+.summary-cards{
+  width:100%!important;
+}
+
+.board,
+.table-wrap,
+.positions-wrap,
+#positionsTable,
+.positions-table{
+  width:100%!important;
+  max-width:100%!important;
+}
+
+@media(max-width:1550px){
+  .app,
+  .container,
+  .wrap,
+  main{
+    width:calc(100vw - 44px)!important;
+    max-width:1480px!important;
+  }
+
+  .header,
+  .topbar,
+  .top-row{
+    grid-template-columns: 1fr auto!important;
+  }
+
+  .top-actions-row{
+    grid-column:1 / -1!important;
+    justify-content:flex-start!important;
+    max-width:100%!important;
+  }
+
+  .right-vertical-actions{
+    grid-column:1 / -1!important;
+    flex-direction:row!important;
+    width:auto!important;
+  }
+
+  .right-vertical-actions button{
+    width:auto!important;
+  }
+}
+
+
+/* V71 FINAL CENTERED BOARD + CLEAN TOP BUTTONS */
+body{
+  overflow-x:auto!important;
+  padding:0!important;
+}
+
+.app,
+.container,
+.wrap,
+main{
+  width:min(1480px, calc(100vw - 96px))!important;
+  max-width:1480px!important;
+  min-width:980px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  padding-left:0!important;
+  padding-right:0!important;
+  box-sizing:border-box!important;
+}
+
+/* header layout */
+.header,
+.topbar,
+.top-row{
+  display:grid!important;
+  grid-template-columns: 1fr auto 620px!important;
+  gap:18px!important;
+  align-items:start!important;
+  width:100%!important;
+  margin:8px auto 18px auto!important;
+}
+
+h1{
+  white-space:nowrap!important;
+  line-height:1.05!important;
+  margin:0!important;
+  font-size:28px!important;
+}
+
+.clock,
+#clock,
+.current-time{
+  justify-self:center!important;
+  white-space:nowrap!important;
+  font-size:22px!important;
+}
+
+/* actions area */
+.actions,
+.top-actions,
+.header-actions{
+  display:block!important;
+  width:620px!important;
+  max-width:620px!important;
+}
+
+.top-actions-row{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+  justify-content:flex-end!important;
+  align-items:center!important;
+  width:100%!important;
+}
+
+.right-vertical-actions{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+  justify-content:flex-end!important;
+  align-items:center!important;
+  width:100%!important;
+  margin-top:8px!important;
+}
+
+.top-actions-row button,
+.right-vertical-actions button,
+.top-actions-row .user-badge{
+  white-space:nowrap!important;
+  flex:0 0 auto!important;
+}
+
+.user-badge{
+  max-width:155px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+/* board/stats must follow app width, not full viewport */
+.cards,
+.stats,
+.summary-cards,
+.board,
+.table-wrap,
+.positions-wrap,
+#positionsWrap,
+#positionsTable,
+.positions-table,
+.panel{
+  width:100%!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+
+/* make panels visually aligned */
+.panel,
+.table-wrap,
+.board,
+.positions-wrap{
+  margin-left:0!important;
+  margin-right:0!important;
+}
+
+/* fix accidental full-width wrappers */
+body > .panel,
+body > .table-wrap,
+body > .board{
+  width:min(1480px, calc(100vw - 96px))!important;
+  max-width:1480px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+
+@media(max-width:1250px){
+  .app,
+  .container,
+  .wrap,
+  main{
+    width:calc(100vw - 32px)!important;
+    min-width:0!important;
+  }
+
+  .header,
+  .topbar,
+  .top-row{
+    grid-template-columns:1fr!important;
+  }
+
+  .clock,
+  #clock,
+  .current-time{
+    justify-self:start!important;
+  }
+
+  .actions,
+  .top-actions,
+  .header-actions{
+    width:100%!important;
+    max-width:100%!important;
+  }
+
+  .top-actions-row,
+  .right-vertical-actions{
+    justify-content:flex-start!important;
+  }
+}
+
+
+/* ===== V72 FINAL NORMAL DASHBOARD LAYOUT ===== */
+:root{
+  --dashW: 1420px;
+}
+
+html, body{
+  width:100%!important;
+  min-width:0!important;
+  overflow-x:hidden!important;
+}
+
+body{
+  padding:0!important;
+  margin:0!important;
+}
+
+.app,
+.container,
+.wrap,
+main{
+  width:min(var(--dashW), calc(100vw - 56px))!important;
+  min-width:0!important;
+  max-width:var(--dashW)!important;
+  margin:0 auto!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+
+/* Header: title left, clock center, buttons right */
+.header,
+.topbar,
+.top-row{
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns: 360px 1fr 620px!important;
+  align-items:start!important;
+  gap:16px!important;
+  margin:12px auto 16px auto!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+
+h1{
+  margin:0!important;
+  white-space:nowrap!important;
+  line-height:1.05!important;
+  font-size:28px!important;
+  text-align:left!important;
+}
+
+.clock,
+#clock,
+.current-time{
+  justify-self:center!important;
+  align-self:start!important;
+  margin-top:4px!important;
+  white-space:nowrap!important;
+  font-size:22px!important;
+  font-weight:900!important;
+}
+
+/* Action toolbar */
+.actions,
+.top-actions,
+.header-actions{
+  width:620px!important;
+  max-width:620px!important;
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-end!important;
+  gap:8px!important;
+  margin:0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+
+.top-actions-row,
+.service-actions-row{
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+  justify-content:flex-end!important;
+  align-items:center!important;
+  width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+
+.top-actions-row button,
+.service-actions-row button,
+.top-actions-row .user-badge{
+  white-space:nowrap!important;
+  flex:0 0 auto!important;
+  height:34px!important;
+  padding:0 12px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+
+.user-badge{
+  max-width:155px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+/* All dashboard sections must be the same width and centered */
+.cards,
+.stats,
+.summary-cards,
+.table-wrap,
+.board,
+.positions-wrap,
+#positionsWrap,
+.panel{
+  width:100%!important;
+  max-width:100%!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  box-sizing:border-box!important;
+}
+
+/* Stats row: five equal cards inside dashboard width */
+.cards,
+.stats,
+.summary-cards{
+  display:grid!important;
+  grid-template-columns:repeat(5, 1fr)!important;
+  gap:10px!important;
+  margin:0 0 12px 0!important;
+}
+
+.cards > *,
+.stats > *,
+.summary-cards > *{
+  min-width:0!important;
+}
+
+/* Position table not too tiny and not full viewport */
+.table-wrap,
+.board,
+.positions-wrap{
+  border-radius:16px!important;
+  overflow:hidden!important;
+}
+
+/* Remove previous broken vertical/right layouts */
+.right-vertical-actions,
+.admin-side-actions,
+.main-actions-line{
+  all:unset!important;
+}
+
+/* Responsive fallback */
+@media(max-width:1200px){
+  .app,
+  .container,
+  .wrap,
+  main{
+    width:calc(100vw - 28px)!important;
+  }
+
+  .header,
+  .topbar,
+  .top-row{
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+
+  .clock,
+  #clock,
+  .current-time{
+    justify-self:start!important;
+  }
+
+  .actions,
+  .top-actions,
+  .header-actions{
+    width:100%!important;
+    max-width:100%!important;
+    align-items:flex-start!important;
+  }
+
+  .top-actions-row,
+  .service-actions-row{
+    justify-content:flex-start!important;
+  }
+
+  .cards,
+  .stats,
+  .summary-cards{
+    grid-template-columns:repeat(2, 1fr)!important;
+  }
+}
+
+@media(max-width:650px){
+  .cards,
+  .stats,
+  .summary-cards{
+    grid-template-columns:1fr!important;
+  }
+}
+
+
+/* V73: statistics must be inside the same form width as the positions table */
+:root{
+  --boardW: 1160px;
+}
+
+/* main shell */
+.app,
+.container,
+.wrap,
+main{
+  width:min(var(--boardW), calc(100vw - 64px))!important;
+  max-width:var(--boardW)!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  padding-left:0!important;
+  padding-right:0!important;
+  box-sizing:border-box!important;
+}
+
+/* header is also same width */
+.header,
+.topbar,
+.top-row{
+  width:min(var(--boardW), calc(100vw - 64px))!important;
+  max-width:var(--boardW)!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  box-sizing:border-box!important;
+}
+
+/* stats row is locked to board width, not viewport */
+.cards,
+.stats,
+.summary-cards{
+  width:100%!important;
+  max-width:100%!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  display:grid!important;
+  grid-template-columns:repeat(5, 1fr)!important;
+  gap:10px!important;
+  box-sizing:border-box!important;
+}
+
+/* board/table aligned with stats */
+.table-wrap,
+.board,
+.positions-wrap,
+#positionsWrap,
+.panel{
+  width:100%!important;
+  max-width:100%!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  box-sizing:border-box!important;
+}
+
+/* prevent any stats block from escaping the centered form */
+body > .cards,
+body > .stats,
+body > .summary-cards{
+  width:min(var(--boardW), calc(100vw - 64px))!important;
+  max-width:var(--boardW)!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+
+/* if some wrapper is full-width, still center direct child blocks */
+body > * .cards,
+body > * .stats,
+body > * .summary-cards{
+  max-width:var(--boardW)!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+
+@media(max-width:900px){
+  .cards,
+  .stats,
+  .summary-cards{
+    grid-template-columns:repeat(2, 1fr)!important;
+  }
+}
+
+@media(max-width:560px){
+  .cards,
+  .stats,
+  .summary-cards{
+    grid-template-columns:1fr!important;
+  }
+}
+
+
+/* V74 CLEAN HEADER + FIXED DASHBOARD FORM */
+:root{
+  --dashW: 1280px;
+}
+
+html, body{
+  margin:0!important;
+  padding:0!important;
+  overflow-x:hidden!important;
+  background:var(--bg)!important;
+}
+
+body{
+  padding-top:10px!important;
+}
+
+.app{
+  width:min(var(--dashW), calc(100vw - 64px))!important;
+  max-width:var(--dashW)!important;
+  min-width:980px!important;
+  margin:0 auto!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+
+/* clean header */
+.topbar{
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns: 340px 240px 1fr!important;
+  gap:16px!important;
+  align-items:start!important;
+  margin:0 0 18px 0!important;
+  padding:0!important;
+}
+
+.title-block h1,
+h1{
+  margin:0!important;
+  padding:0!important;
+  font-size:27px!important;
+  line-height:1.05!important;
+  white-space:nowrap!important;
+  text-align:left!important;
+}
+
+.live-datetime{
+  justify-self:center!important;
+  min-width:240px!important;
+  padding:0!important;
+  margin-top:4px!important;
+  border:none!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  text-align:center!important;
+  font-size:22px!important;
+  line-height:34px!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+}
+
+.top-actions{
+  display:grid!important;
+  grid-template-columns: 1fr 150px!important;
+  gap:10px!important;
+  align-items:start!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:0!important;
+}
+
+.top-actions-row{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+  justify-content:flex-end!important;
+  align-items:center!important;
+  width:100%!important;
+}
+
+.top-actions-side{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+  width:150px!important;
+}
+
+.top-actions-row button,
+.top-actions-side button,
+.top-actions-row .user-badge{
+  height:34px!important;
+  padding:0 12px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  white-space:nowrap!important;
+  flex:0 0 auto!important;
+}
+
+.top-actions-side button{
+  width:150px!important;
+}
+
+.user-badge{
+  max-width:150px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+/* dashboard body inside same form width */
+.stats{
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:repeat(5, 1fr)!important;
+  gap:10px!important;
+  margin:0 0 12px 0!important;
+}
+
+.panel,
+.table-wrap{
+  width:100%!important;
+  max-width:100%!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  box-sizing:border-box!important;
+}
+
+.panel{
+  border-radius:16px!important;
+  overflow:hidden!important;
+}
+
+/* remove influence of old layouts */
+.header,
+.top-row,
+.actions,
+.header-actions,
+.right-vertical-actions,
+.admin-side-actions,
+.main-actions-line,
+.service-actions-row{
+  all:unset!important;
+}
+
+@media(max-width:1200px){
+  .app{
+    width:calc(100vw - 28px)!important;
+    min-width:0!important;
+  }
+
+  .topbar{
+    grid-template-columns:1fr!important;
+  }
+
+  .live-datetime{
+    justify-self:start!important;
+  }
+
+  .top-actions{
+    grid-template-columns:1fr!important;
+  }
+
+  .top-actions-row{
+    justify-content:flex-start!important;
+  }
+
+  .top-actions-side{
+    flex-direction:row!important;
+    width:auto!important;
+  }
+
+  .top-actions-side button{
+    width:auto!important;
+  }
+
+  .stats{
+    grid-template-columns:repeat(2, 1fr)!important;
+  }
+}
+
+@media(max-width:600px){
+  .stats{
+    grid-template-columns:1fr!important;
+  }
+}
+
+
+
+/* ===== V77 CLEAN MANAGEMENT VIEW FIX ===== */
+:root{
+  --dashW: 1500px;
+  --sideW: 178px;
+  --gapW: 18px;
+}
+
+html,body{
+  margin:0!important;
+  padding:0!important;
+  overflow-x:hidden!important;
+  background:#07121b!important;
+}
+
+body{
+  padding-top:12px!important;
+  font-family:Arial, sans-serif!important;
+}
+
+.app{
+  width:min(var(--dashW), calc(100vw - 40px))!important;
+  max-width:var(--dashW)!important;
+  min-width:1180px!important;
+  margin:0 auto!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+
+/* Header: title | clock | only three main buttons */
+.topbar{
+  display:grid!important;
+  grid-template-columns: 1fr 320px 540px!important;
+  align-items:center!important;
+  gap:22px!important;
+  width:100%!important;
+  margin:0 0 16px 0!important;
+  padding:0!important;
+}
+
+.title-block{min-width:0!important;}
+.title-block h1,
+h1{
+  margin:0!important;
+  padding:0!important;
+  font-size:28px!important;
+  line-height:1.1!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+  color:#fff!important;
+}
+
+.live-datetime{
+  width:320px!important;
+  min-width:320px!important;
+  max-width:320px!important;
+  height:44px!important;
+  padding:0 16px!important;
+  margin:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:1px solid #36546d!important;
+  border-radius:12px!important;
+  background:#081624!important;
+  box-shadow:none!important;
+  color:#fff!important;
+  font-size:22px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  letter-spacing:.2px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+}
+
+.top-actions{
+  width:100%!important;
+  max-width:100%!important;
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+}
+
+.top-actions-row{
+  width:100%!important;
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  justify-content:flex-end!important;
+  align-items:center!important;
+  gap:8px!important;
+  margin:0!important;
+  padding:0!important;
+}
+
+.top-actions-row button,
+.top-actions-row .user-badge{
+  height:36px!important;
+  padding:0 12px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  white-space:nowrap!important;
+  flex:0 0 auto!important;
+  border-radius:9px!important;
+  font-size:13px!important;
+  font-weight:900!important;
+}
+
+.top-actions-row .user-badge{
+  max-width:125px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+.top-actions-row button[onclick*="openCreateModal"]{
+  min-width:170px!important;
+}
+
+.top-actions-row button.green{
+  min-width:86px!important;
+}
+
+/* main body: content + vertical buttons */
+.dashboard-grid{
+  display:grid!important;
+  grid-template-columns: minmax(0, 1fr) var(--sideW)!important;
+  gap:var(--gapW)!important;
+  align-items:start!important;
+  width:100%!important;
+}
+
+.dashboard-content{
+  min-width:0!important;
+  width:100%!important;
+}
+
+.dashboard-sidebar{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:10px!important;
+  width:var(--sideW)!important;
+  min-width:var(--sideW)!important;
+  position:sticky!important;
+  top:12px!important;
+}
+
+.dashboard-sidebar .side-btn,
+.dashboard-sidebar button{
+  width:100%!important;
+  min-height:56px!important;
+  padding:10px 8px!important;
+  border-radius:10px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  white-space:normal!important;
+  line-height:1.15!important;
+  font-size:14px!important;
+  font-weight:900!important;
+}
+
+#manageModeBtn.active{
+  background:#f8c943!important;
+  color:#06111b!important;
+}
+
+/* stats aligned inside left form only */
+.stats{
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:10px!important;
+  margin:0 0 12px 0!important;
+}
+
+.stat{
+  min-width:0!important;
+  height:70px!important;
+  padding:12px!important;
+}
+
+.stat b{font-size:24px!important;line-height:1!important;}
+.stat span{font-size:12px!important;}
+
+.panel,
+.table-wrap{
+  width:100%!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+
+.panel{
+  border-radius:14px!important;
+  overflow:hidden!important;
+}
+
+.table-wrap{overflow:hidden!important;}
+
+table{
+  width:100%!important;
+  table-layout:fixed!important;
+  border-collapse:collapse!important;
+}
+
+th,td{
+  padding:10px 10px!important;
+  vertical-align:middle!important;
+  overflow:hidden!important;
+}
+
+/* stable column widths */
+thead th:nth-child(1), tbody td:nth-child(1){width:13%!important;}
+thead th:nth-child(2), tbody td:nth-child(2){width:18%!important;}
+thead th:nth-child(3), tbody td:nth-child(3){width:18%!important;}
+thead th:nth-child(4), tbody td:nth-child(4){width:12%!important;}
+thead th:nth-child(5), tbody td:nth-child(5){width:7%!important;text-align:center!important;}
+thead th:nth-child(6), tbody td:nth-child(6){width:21%!important;}
+thead th:nth-child(7), tbody td:nth-child(7){width:170px!important;min-width:170px!important;}
+
+#actionHeader{
+  text-align:center!important;
+}
+
+/* management buttons: no ugly wrapping to second line */
+.row-actions{
+  display:grid!important;
+  grid-template-columns: 1fr 1fr 1fr 30px!important;
+  gap:6px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  max-width:160px!important;
+  margin:0 auto!important;
+}
+
+.row-actions button{
+  height:28px!important;
+  min-width:0!important;
+  width:100%!important;
+  padding:0 6px!important;
+  border-radius:7px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font-size:12px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+
+.row-actions button:last-child{
+  width:30px!important;
+  padding:0!important;
+}
+
+.posname{
+  display:block!important;
+  max-width:100%!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+}
+
+.meta{
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+}
+
+/* keep event/filters/log panels full left-column width */
+#eventPanel,
+#filterPanel,
+#logPanel{
+  margin-top:12px!important;
+}
+
+@media(max-width:1250px){
+  .app{
+    width:calc(100vw - 24px)!important;
+    min-width:0!important;
+  }
+  .topbar{
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+  .live-datetime{
+    width:100%!important;
+    max-width:320px!important;
+    min-width:0!important;
+    justify-self:start!important;
+  }
+  .top-actions-row{
+    justify-content:flex-start!important;
+    flex-wrap:wrap!important;
+  }
+  .dashboard-grid{
+    grid-template-columns:1fr!important;
+  }
+  .dashboard-sidebar{
+    position:static!important;
+    width:100%!important;
+    min-width:0!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  }
+  .stats{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  table{table-layout:auto!important;}
+  .table-wrap{overflow:auto!important;}
+}
+
+
+.icon-import::before{
+  content:"⬆";
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-right:8px;
+  font-size:17px;
+  line-height:1;
+}
+@media(max-width:1250px){
+  #importExcelBtn{order:4;}
+}
+</style>
+</head>
+<body>
+<h1>Аналітика обстрілів та подій</h1>
+<p><b>Станом на:</b> ${now.toLocaleString("uk-UA")}</p><p><b>${getPeriodLabel()}</b></p>
+
+<h2>Загальна статистика</h2>
+<table>
+<thead><tr><th>Показник</th><th>Кількість</th></tr></thead>
+<tbody>
+`;
+
+  statRows.forEach(r=>{
+    report += `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`;
+  });
+
+  report += `
+</tbody>
+</table>
+
+<h2>Аналітика по позиціях</h2>
+<table>
+<thead>
+<tr>
+<th>Позиція</th><th>Тип</th><th>Координати</th><th>н.п.</th><th>Статус</th><th>Усього</th><th>Бойові</th><th>FPV</th><th>Скиди</th><th>Міномет</th><th>Арт.</th><th>РСЗВ</th><th>Танк</th><th>Стріл.</th><th>Штурм</th><th>Знищ.</th>
+</tr>
+</thead>
+<tbody>
+`;
+
+  if(!rows.length){
+    report += `<tr><td colspan="16">Даних немає.</td></tr>`;
+  }else{
+    rows.forEach(p=>{
+      const cls = p.status==="Знищено" || p.combat>0 ? "bad" : "good";
+      report += `<tr class="${cls}">
+<td>${esc(p.name)}</td><td>${esc(p.type)}</td><td>${esc(p.coords)}</td><td>${esc(p.village)}</td><td>${esc(p.status)}</td>
+<td>${p.total}</td><td>${p.combat}</td><td>${p.fpv}</td><td>${p.drops}</td><td>${p.mortar}</td><td>${p.artillery}</td><td>${p.rszo}</td><td>${p.tank}</td><td>${p.rifle}</td><td>${p.assault}</td><td>${p.destroyed}</td>
+</tr>`;
+    });
+  }
+
+  report += `
+</tbody>
+</table>
+
+<h2 class="journal-title-toggle" onclick="togglePeriodPanel()">Журнал подій <span id="journalToggleArrow">▾</span></h2>
+<table>
+<thead><tr><th>Дата/час</th><th>Позиція</th><th>Тип</th><th>Подія</th></tr></thead>
+<tbody>
+`;
+
+  events.forEach(e=>{
+    report += `<tr>
+<td>${new Date(e.createdAt).toLocaleString("uk-UA")}</td>
+<td>${esc(e.positionName)}</td>
+<td>${esc(e.type)}</td>
+<td>${esc(e.text)}</td>
+</tr>`;
+  });
+
+  report += `
+</tbody>
+</table>
+
+<script>
+(function(){
+  function syncHeaderUser(){
+    try{
+      var s = JSON.parse(localStorage.getItem('op_board_auth_session_v1') || 'null');
+      var btn = document.getElementById('logoutBtn');
+      if(btn){
+        var label = s && s.login ? s.login : 'Адмін';
+        btn.textContent = label.charAt(0).toUpperCase() + label.slice(1) + ' - вийти';
+        btn.classList.add('icon-admin');
+      }
+    }catch(e){}
+  }
+  var oldApply = window.applyAuthState;
+  if(typeof oldApply === 'function'){
+    window.applyAuthState = function(){ oldApply.apply(this, arguments); syncHeaderUser(); };
+  }
+  window.addEventListener('load', syncHeaderUser);
+  setInterval(syncHeaderUser, 1000);
+})();
+<\/script>
+
+</body>
+</html>`;
+
+  const name = "Аналітика_обстрілів_" + now.toLocaleDateString("uk-UA").replaceAll(".","-") + ".html";
+  downloadTextFile(name, report, "text/html;charset=utf-8");
+}
+
+function renderAnalytics(){
+  const {stats, rows} = getAnalyticsData();
+  const totalPositions = (state.positions || []).length;
+
+  let html=`
+    <div class="section-title">Загальна статистика</div>
+    <div class="meta" style="margin-bottom:8px">${getPeriodLabel ? getPeriodLabel() : "Період: за весь час"}. Події втрати/відновлення зв’язку в аналітику не включаються.</div>
+
+    <div class="analytics-grid">
+      <div class="analytics-card"><b>${totalPositions}</b><span>Усього позицій</span></div>
+      <div class="analytics-card"><b>${stats.total}</b><span>Усього подій</span></div>
+      <div class="analytics-card"><b>${stats.combat}</b><span>Бойові події</span></div>
+      <div class="analytics-card"><b>${stats.fpv}</b><span>FPV</span></div>
+
+      <div class="analytics-card"><b>${stats.drops}</b><span>Скиди БПЛА</span></div>
+      <div class="analytics-card"><b>${stats.mortar}</b><span>Міномет</span></div>
+      <div class="analytics-card"><b>${stats.artillery}</b><span>Артилерія</span></div>
+      <div class="analytics-card"><b>${stats.rszo}</b><span>РСЗВ</span></div>
+
+      <div class="analytics-card"><b>${stats.tank}</b><span>Танк</span></div>
+      <div class="analytics-card"><b>${stats.rifle}</b><span>Стріл. зброя</span></div>
+      <div class="analytics-card"><b>${stats.assault}</b><span>Штурм</span></div>
+      <div class="analytics-card"><b>${stats.destroyed}</b><span>Знищення позицій</span></div>
+    </div>
+
+    <div class="section-title">Аналітика по всіх позиціях</div>
+
+    <table class="analytics-table">
+      <thead>
+        <tr>
+          <th>Позиція</th>
+          <th>Тип</th>
+          <th>Статус</th>
+          <th>Усього</th>
+          <th>Бойові</th>
+          <th>FPV</th>
+          <th>Скиди</th>
+          <th>Міномет</th>
+          <th>Арт.</th>
+          <th>РСЗВ</th>
+          <th>Танк</th>
+          <th>Стріл.</th>
+          <th>Штурм</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  if(!rows.length){
+    html+=`<tr><td colspan="13">Позицій немає.</td></tr>`;
+  }else{
+    rows.forEach(p=>{
+      const rowClass = p.status==="Знищено" || p.combat>0 ? "analytics-warning" : "analytics-good";
+      html+=`
+        <tr class="${rowClass}">
+          <td><b>${esc(p.name)}</b><br><span class="meta">${esc(p.coords||"—")} / ${esc(p.village||"—")}</span></td>
+          <td>${esc(p.type)}</td>
+          <td>${esc(p.status)}</td>
+          <td>${p.total}</td>
+          <td>${p.combat}</td>
+          <td>${p.fpv}</td>
+          <td>${p.drops}</td>
+          <td>${p.mortar}</td>
+          <td>${p.artillery}</td>
+          <td>${p.rszo}</td>
+          <td>${p.tank}</td>
+          <td>${p.rifle}</td>
+          <td>${p.assault}</td>
+        </tr>
+      `;
+    });
+  }
+
+  html+=`
+      </tbody>
+    </table>
+
+    <div class="section-title">Проблемні позиції</div>
+    <table class="analytics-table">
+      <thead>
+        <tr>
+          <th>Позиція</th>
+          <th>Причина</th>
+          <th>Показники</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  const problems = rows.filter(p=>p.status==="Знищено" || p.combat>0 || p.destroyed>0);
+
+  if(!problems.length){
+    html+=`<tr><td colspan="3">Проблемних позицій не виявлено.</td></tr>`;
+  }else{
+    problems.forEach(p=>{
+      const reasons=[];
+      if(p.status==="Знищено") reasons.push("знищено");
+      if(p.combat>0) reasons.push("обстріли");
+      if(p.destroyed>0) reasons.push("подія знищення");
+
+      html+=`
+        <tr class="analytics-warning">
+          <td><b>${esc(p.name)}</b><br><span class="meta">${esc(p.type)}</span></td>
+          <td>${reasons.join(", ")}</td>
+          <td>${analyticsSummaryText(p)}</td>
+        </tr>
+      `;
+    });
+  }
+
+  html+=`
+      </tbody>
+    </table>
+  `;
+
+  analyticsBody.innerHTML=html;
+}
+
+
+function renderAll(){renderStats();renderSelect();renderPositions();renderLog();updatePreview()}
+setInterval(()=>{document.querySelectorAll("[data-timer]").forEach(el=>{const p=pos(el.dataset.timer);if(p&&!p.online&&p.offlineSince)el.textContent=dur(Date.now()-p.offlineSince)})},1000);
+applyFilters();
+</script>
+
+<script>
+(function(){
+  function pad(n){ return String(n).padStart(2, "0"); }
+
+  function tick(){
+    var el = document.getElementById("liveDateTime");
+    if(!el) return;
+
+    var d = new Date();
+    var text =
+      pad(d.getDate()) + "." +
+      pad(d.getMonth() + 1) + "." +
+      d.getFullYear() + " | " +
+      pad(d.getHours()) + ":" +
+      pad(d.getMinutes()) + ":" +
+      pad(d.getSeconds());
+
+    el.textContent = text;
+  }
+
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+
+
+<script>
+(function(){
+  function syncHeaderUser(){
+    try{
+      var s = JSON.parse(localStorage.getItem('op_board_auth_session_v1') || 'null');
+      var btn = document.getElementById('logoutBtn');
+      if(btn){
+        var label = s && s.login ? s.login : 'Адмін';
+        btn.textContent = label.charAt(0).toUpperCase() + label.slice(1) + ' - вийти';
+        btn.classList.add('icon-admin');
+      }
+    }catch(e){}
+  }
+  var oldApply = window.applyAuthState;
+  if(typeof oldApply === 'function'){
+    window.applyAuthState = function(){ oldApply.apply(this, arguments); syncHeaderUser(); };
+  }
+  window.addEventListener('load', syncHeaderUser);
+  setInterval(syncHeaderUser, 1000);
+})();
+</script>
+
+</body>
+</html>
