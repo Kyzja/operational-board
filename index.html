@@ -6697,6 +6697,37 @@ applyFilters();
   setInterval(syncHeaderUser, 1000);
 })();
 </script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  onSnapshot,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC_00H99YJvkJj_l0cgw4o9IirNQFiZ7Jc",
+  authDomain: "operational-board.firebaseapp.com",
+  projectId: "operational-board",
+  storageBucket: "operational-board.firebasestorage.app",
+  messagingSenderId: "568800500719",
+  appId: "1:568800500719:web:6007a2dfab9a045b19741a",
+  measurementId: "G-63JRSJJ2RP"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.db = db;
+
+console.log("Firebase initialized");
+</script>
 </body>
 </html>
