@@ -2102,6 +2102,16 @@ body.modal-open{
   }
 }
 
+
+/* ===== V101 FIX LOGIN + HIDE PASSWORD HINT + SHOW ALL ===== */
+.auth-info{display:none!important;}
+.pages{display:none!important;}
+
+
+/* ===== V102 STRICT LOGIN ===== */
+.auth-info{display:none!important;}
+.pages{display:none!important;}
+
 </style>
 </head>
 <body>
@@ -2118,6 +2128,8 @@ body.modal-open{
     <button type="button" onclick="loginUser()" style="width:100%">Увійти</button>
 
     <div id="authError" class="auth-error"></div>
+
+
   </div>
 </div>
 
@@ -2423,7 +2435,7 @@ const firebaseConfig = {
   messagingSenderId: "568800500719",
   appId: "1:568800500719:web:6007a2dfab9a045b19741a",
   measurementId: "G-63JRSJJ2RP"
-<!-- }; -->
+};
 
 let cloudReady = false;
 let cloudLoading = false;
@@ -2668,34 +2680,39 @@ function clearSession(){
 
 function loginUser(){
   const login=(document.getElementById("loginUsername")?.value || "").trim();
-  const pass=document.getElementById("loginPassword")?.value || "";
+  const pass=(document.getElementById("loginPassword")?.value || "");
   const err=document.getElementById("authError");
 
-  let users=getAuthUsers();
-  let user=users.find(u=>String(u.login).toLowerCase()===login.toLowerCase());
-
-  /* Резервний вхід, щоб файл не блокувався через старий localStorage у браузері.
-     Дані позицій/журналу не чіпає. */
-  if(login.toLowerCase()==="admin" && pass==="admin123"){
-    if(!user){
-      user={login:"admin",passHash:simpleHash("admin123"),role:"admin",createdAt:new Date().toISOString()};
-      users.push(user);
-    }else{
-      user.passHash=simpleHash("admin123");
-      user.role="admin";
-    }
-    saveAuthUsers(users);
-    setSession(user);
-    if(err)err.textContent="";
-    applyAuthState();
-    return;
+  if(!login || !pass){
+    if(err) err.textContent="Введіть логін і пароль.";
+    return false;
   }
 
+  let users=getAuthUsers();
 
+  // Перший запуск: якщо користувачів ще немає — створюємо ,
+  // але все одно вимагаємо правильний пароль.
+  if(!Array.isArray(users) || users.length===0){
+    users=[{
+      login:"admin",
+      passHash:simpleHash("admin123"),
+      role:"admin",
+      createdAt:new Date().toISOString()
+    }];
+    saveAuthUsers(users);
+  }
+
+  const user=users.find(u=>String(u.login || "").toLowerCase()===login.toLowerCase());
+
+  if(!user || String(user.passHash)!==String(simpleHash(pass))){
+    if(err) err.textContent="Невірний логін або пароль.";
+    return false;
+  }
 
   setSession(user);
-  if(err)err.textContent="";
+  if(err) err.textContent="";
   applyAuthState();
+  return true;
 }
 
 function logoutUser(){
