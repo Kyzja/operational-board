@@ -2404,6 +2404,10 @@ body.modal-open{
   </div>
 </div>
 
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 const KEY="operational_board_v27_stable";
@@ -2416,13 +2420,148 @@ let editCardId=null;
 let filtered=[];
 let state=load();
 
+/* ===== FIREBASE CLOUD SYNC v99 ===== */
+const firebaseConfig = {
+  apiKey: "AIzaSyC_00H99YJvkJj_l0cgw4o9IirNQFiZ7Jc",
+  authDomain: "operational-board.firebaseapp.com",
+  projectId: "operational-board",
+  storageBucket: "operational-board.firebasestorage.app",
+  messagingSenderId: "568800500719",
+  appId: "1:568800500719:web:6007a2dfab9a045b19741a",
+  measurementId: "G-63JRSJJ2RP"
+};
+
+let cloudReady = false;
+let cloudLoading = false;
+let cloudLastJson = "";
+let cloudRef = null;
+let cloudUnsub = null;
+
+function normalizeCloudState(obj){
+  obj = obj && typeof obj === "object" ? obj : {};
+  return {
+    positions: Array.isArray(obj.positions) ? obj.positions : [],
+    events: Array.isArray(obj.events) ? obj.events : []
+  };
+}
+
+function cloudToast(text, bad){
+  let el = document.getElementById("cloudToast");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "cloudToast";
+    el.style.cssText = "position:fixed;left:16px;bottom:16px;z-index:999999;padding:10px 14px;border-radius:10px;font-weight:900;color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.35);background:#00a862;font-family:Arial,sans-serif";
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.style.background = bad ? "#ff3d57" : "#00a862";
+  if(!bad) setTimeout(()=>{ if(el) el.remove(); }, 1600);
+}
+
+function renderFromCloud(){
+  try{ applyFilters(); }catch(e){}
+  try{ renderLog(); }catch(e){}
+  try{ renderAll(); }catch(e){}
+}
+
+function initCloudSync(){
+  try{
+    if(!window.firebase || !firebase.initializeApp || !firebase.firestore){
+      console.warn("Firebase SDK not loaded");
+      cloudToast("Firebase SDK не завантажився", true);
+      return;
+    }
+
+    try{ firebase.app(); }catch(e){ firebase.initializeApp(firebaseConfig); }
+
+    const db = firebase.firestore();
+    cloudRef = db.collection("boards").doc("main");
+    cloudReady = true;
+
+    console.log("Firebase initialized");
+
+    cloudUnsub = cloudRef.onSnapshot(async (snap)=>{
+      try{
+        if(!snap.exists){
+          const localState = normalizeCloudState(state);
+          cloudLastJson = JSON.stringify(localState);
+          await cloudRef.set({
+            positions: localState.positions,
+            events: localState.events,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          console.log("Firebase document created");
+          return;
+        }
+
+        const data = snap.data() || {};
+        const incoming = normalizeCloudState(data);
+        const incomingJson = JSON.stringify(incoming);
+
+        if(incomingJson === cloudLastJson) return;
+
+        cloudLoading = true;
+        state = incoming;
+        localStorage.setItem(KEY, JSON.stringify(state));
+        cloudLastJson = incomingJson;
+
+        renderFromCloud();
+
+        cloudLoading = false;
+        console.log("Realtime update received");
+      }catch(e){
+        cloudLoading = false;
+        console.error("Cloud snapshot apply error", e);
+      }
+    }, (err)=>{
+      console.error("Firebase listen error", err);
+      cloudToast("Firebase помилка: " + err.message, true);
+    });
+  }catch(e){
+    console.error("Firebase init error", e);
+    cloudToast("Firebase не запустився: " + e.message, true);
+  }
+}
+
+function saveBoardToCloud(){
+  if(!cloudReady || !cloudRef || cloudLoading) return;
+  try{
+    const clean = normalizeCloudState(state);
+    const json = JSON.stringify(clean);
+    if(json === cloudLastJson) return;
+
+    cloudLastJson = json;
+
+    cloudRef.set({
+      positions: clean.positions,
+      events: clean.events,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(()=>{
+      console.log("Saved to Firebase");
+    }).catch((e)=>{
+      console.error("Firebase save error", e);
+      cloudToast("Не вдалося зберегти у Firebase", true);
+    });
+  }catch(e){
+    console.error("Firebase save error", e);
+    cloudToast("Не вдалося зберегти у Firebase", true);
+  }
+}
+
+window.addEventListener("load", ()=>setTimeout(initCloudSync, 700));
+/* ===== END FIREBASE CLOUD SYNC v99 ===== */
+
+
 function uid(){return "id_"+Date.now()+"_"+Math.random().toString(16).slice(2)}
 function load(){
   const saved=localStorage.getItem(KEY);
   if(saved){try{return JSON.parse(saved)}catch(e){}}
   return {positions:[],events:[]};
 }
-function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function save(){
+  localStorage.setItem(KEY,JSON.stringify(state));
+  if(typeof saveBoardToCloud==="function") saveBoardToCloud();
+}
 function esc(t){const d=document.createElement("div");d.textContent=t??"";return d.innerHTML}
 function pos(id){return state.positions.find(p=>p.id===id)}
 function isFire(t){return !["Втрачено зв’язок","Відновлено зв’язок","Знищено позицію","Відновлено позицію"].includes(t)}
@@ -6697,37 +6836,6 @@ applyFilters();
   setInterval(syncHeaderUser, 1000);
 })();
 </script>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  onSnapshot,
-  doc,
-  setDoc,
-  updateDoc,
-  deleteDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyC_00H99YJvkJj_l0cgw4o9IirNQFiZ7Jc",
-  authDomain: "operational-board.firebaseapp.com",
-  projectId: "operational-board",
-  storageBucket: "operational-board.firebasestorage.app",
-  messagingSenderId: "568800500719",
-  appId: "1:568800500719:web:6007a2dfab9a045b19741a",
-  measurementId: "G-63JRSJJ2RP"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-window.db = db;
-
-console.log("Firebase initialized");
-</script>
 </body>
 </html>
