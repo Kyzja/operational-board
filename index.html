@@ -4870,7 +4870,7 @@ function getSelectedPackageTypes(){
 }
 
 function resetPackageFilters(){
-  document.querySelectorAll(".pkg-type-check").forEach(ch => ch.checked = true);
+  document.querySelectorAll(".pkg-type-check").forEach(ch => ch.checked = false);
 
   const statusFilter = document.getElementById("packageStatusFilter");
   if(statusFilter) statusFilter.value = "all";
@@ -8431,15 +8431,15 @@ console.log("Firebase Auth + Roles initialized");
             СП завжди
           </label>
           <label>
-            <input type="checkbox" class="pkg-type-check" value="БПЛА" checked onchange="renderPackagesModal()">
+            <input type="checkbox" class="pkg-type-check" value="БПЛА" onchange="renderPackagesModal()">
             БпЛА
           </label>
           <label>
-            <input type="checkbox" class="pkg-type-check" value="FPV" checked onchange="renderPackagesModal()">
+            <input type="checkbox" class="pkg-type-check" value="FPV" onchange="renderPackagesModal()">
             FPV
           </label>
           <label>
-            <input type="checkbox" class="pkg-type-check" value="OTHER" checked onchange="renderPackagesModal()">
+            <input type="checkbox" class="pkg-type-check" value="OTHER" onchange="renderPackagesModal()">
             Інші
           </label>
         </div>
