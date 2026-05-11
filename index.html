@@ -2283,6 +2283,67 @@ body.fb-auth-ok #authScreen{display:none!important;}
   border-color:rgba(158,179,196,.25)!important;
 }
 
+
+/* ===== V118 PACKAGES / ПОСИЛКИ FIXED ===== */
+#packagesBtn{ pointer-events:auto!important; cursor:pointer!important; }
+#packagesModal.show{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  z-index:90000!important;
+}
+#packagesModal .modal{
+  z-index:90001!important;
+  width:min(1100px,94vw)!important;
+  max-height:90vh!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+#packagesModal .modal-body{ overflow:auto!important; }
+.packages-table{
+  width:100%!important;
+  border-collapse:collapse!important;
+  table-layout:fixed!important;
+}
+.packages-table th,
+.packages-table td{
+  border:1px solid var(--line)!important;
+  padding:10px!important;
+  vertical-align:middle!important;
+  font-size:14px!important;
+  white-space:normal!important;
+  overflow-wrap:break-word!important;
+}
+.packages-table th{ background:#20384c!important; }
+.package-lamp{
+  display:inline-block;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  border:2px solid rgba(255,255,255,.45);
+  vertical-align:middle;
+  box-shadow:0 0 12px currentColor;
+}
+.package-lamp.green{ background:#00e676; color:#00e676; }
+.package-lamp.yellow{ background:#f8c943; color:#f8c943; }
+.package-lamp.red{ background:#ff3d57; color:#ff3d57; }
+.package-lamp.gray{ background:#64748b; color:#64748b; }
+.package-note{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.35;
+  margin-bottom:12px;
+}
+.package-actions{
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
+  margin-bottom:12px;
+  flex-wrap:wrap;
+}
+
 </style>
 </head>
 <body>
@@ -2391,11 +2452,11 @@ body.fb-auth-ok #authScreen{display:none!important;}
       <select id="eventPosition" onchange="updatePreview()"></select>
       <select id="eventType" onchange="syncQtyUnit();updatePreview()">
         <option>Скид БПЛА</option><option>FPV</option><option>Авіаудар КАБ</option><option>Міномет</option><option>Артилерія</option><option>РСЗВ</option><option>Танк</option><option>Стріл. зброя</option><option>Штурм</option>
-        <option>Втрачено зв’язок</option><option>Відновлено зв’язок</option><option>Знищено позицію</option><option>Відновлено позицію</option><option>Інше</option>
+        <option>Втрачено зв’язок</option><option>Відновлено зв’язок</option><option>Знищено позицію</option><option>Відновлено позицію</option><option>Посилка</option><option>Інше</option>
       </select>
     </div>
     <div class="quick">
-      <button onclick="quick('time')">Час</button><button onclick="quick('Скид БПЛА')">Скид</button><button onclick="quick('FPV')">FPV</button><button onclick="quick('Авіаудар КАБ')">КАБ</button><button onclick="quick('Міномет')">Міномет</button><button onclick="quick('Артилерія')">Артилерія</button><button onclick="quick('Штурм')">Штурм</button>
+      <button onclick="quick('time')">Час</button><button onclick="quick('Скид БПЛА')">Скид</button><button onclick="quick('FPV')">FPV</button><button onclick="quick('Авіаудар КАБ')">КАБ</button><button onclick="quick('Міномет')">Міномет</button><button onclick="quick('Артилерія')">Артилерія</button><button onclick="quick('Штурм')">Штурм</button><button onclick="quick('Посилка')">Посилка</button>
     </div>
     <div class="form3">
       <input id="eventTime" placeholder="час: 00.40" oninput="updatePreview()">
@@ -2501,6 +2562,7 @@ body.fb-auth-ok #authScreen{display:none!important;}
     <button type="button" class="blue side-btn icon-filter" onclick="toggleDrawer('filterPanel')">Фільтри</button>
     <button type="button" class="blue side-btn icon-book" onclick="toggleDrawer('logPanel')">Журнал</button>
     <button type="button" class="blue side-btn icon-chart" onclick="openAnalyticsModal()">Аналітика</button>
+    <button type="button" id="packagesBtn" class="blue side-btn icon-import" onclick="openPackagesModal()">Посилки</button>
     <button type="button" class="blue side-btn icon-shield" onclick="openAdminModal()" data-role="admin">Адміністрування</button>
   </aside>
   </div>
@@ -2652,7 +2714,7 @@ function save(){
 }
 function esc(t){const d=document.createElement("div");d.textContent=t??"";return d.innerHTML}
 function pos(id){return state.positions.find(p=>p.id===id)}
-function isFire(t){return !["Втрачено зв’язок","Відновлено зв’язок","Знищено позицію","Відновлено позицію"].includes(t)}
+function isFire(t){return !["Втрачено зв’язок","Відновлено зв’язок","Знищено позицію","Відновлено позицію","Посилка"].includes(t)}
 function countFire(id){return state.events.filter(e=>e.positionId===id&&isFire(e.type)).length}
 function nowTime(){const d=new Date();return String(d.getHours()).padStart(2,"0")+"."+String(d.getMinutes()).padStart(2,"0")}
 function dur(ms){let s=Math.max(0,Math.floor(ms/1000));let h=Math.floor(s/3600);s%=3600;let m=Math.floor(s/60);s%=60;return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")}
@@ -4066,7 +4128,7 @@ function openInfoModal(id){
         <tr><th>н.п.</th><td>${esc(p.village||"—")}</td></tr>
         <tr><th>Зв’язок</th><td>${p.online&&!p.destroyed?"На зв’язку":(p.destroyed?"Знищено":"Немає зв’язку")}</td></tr>
         <tr><th>Обстріли</th><td>${countFire(p.id)}</td></tr>
-        <tr><th>Остання подія</th><td>${esc(p.lastEvent||"—")}</td>${managementMode ? `<td>${managementActionsHTML(p)}</td>` : ""}</tr>
+        <tr><th>Остання подія</th><td>${esc(getLastEventTextForPosition(p))}</td>${managementMode ? `<td>${managementActionsHTML(p)}</td>` : ""}</tr>
       </table>
     </div>
     <div class="section-title">Особовий склад</div>`;
@@ -4119,6 +4181,8 @@ function getDefaultUnit(type){
   if(type === "танк") return "постріл";
 
   if(type === "скид бпла" || type === "fpv" || type === "авіаудар каб" || type === "рсзв") return "од.";
+
+  if(type === "посилка") return "none";
 
   return "none";
 }
@@ -4198,6 +4262,14 @@ function buildText(){
     return text;
   }
 
+  if(type==="Посилка"){
+    let text=(t?t+" ":"")+"Посилка на позицію "+p.name;
+    if(p.coords)text+=" ("+p.coords+")";
+    if(p.village)text+=" "+p.village;
+    text+=".";
+    return text;
+  }
+
   if(!isFire(type))return (t?t+" ":"")+type+" "+p.name+".";
 
   let text=(t?t+" ":"")+type;
@@ -4261,6 +4333,7 @@ function addEvent(){
       e.losses=eventLosses.value.trim();
       e.enemyLosses=getEnemyLossText();
       p.lastEvent=text;
+      if(type==="Посилка") p.lastPackageAt=new Date().toISOString();
     }
 
     editEventId=null;
@@ -4269,6 +4342,7 @@ function addEvent(){
 
     save();
     applyFilters();
+    if(document.getElementById("packagesModal")?.classList.contains("show")) renderPackagesModal();
     hideDrawer("eventPanel");
     return;
   }
@@ -4309,10 +4383,15 @@ function addEvent(){
     p.offlineSince=null;
   }
 
+  if(type==="Посилка"){
+    p.lastPackageAt=new Date().toISOString();
+  }
+
   p.lastEvent=text;
 
   save();
   applyFilters();
+  if(document.getElementById("packagesModal")?.classList.contains("show")) renderPackagesModal();
   hideDrawer("eventPanel");
 }
 function deleteEvent(id){
@@ -4483,6 +4562,149 @@ function restorePosition(id){
   save();
   applyFilters();
   renderLog();
+}
+
+
+
+function getPeopleCount(p){
+  return Array.isArray(p?.personnel) ? p.personnel.length : 0;
+}
+
+function getLastPackageEvent(p){
+  const byEvent = (state.events || [])
+    .filter(e => e.positionId === p.id && e.type === "Посилка")
+    .sort((a,b) => new Date(b.createdAt || b.updatedAt || 0) - new Date(a.createdAt || a.updatedAt || 0))[0];
+
+  if(byEvent) return byEvent;
+
+  if(p.lastPackageAt){
+    return {
+      createdAt:p.lastPackageAt,
+      text:"Посилка на позицію " + (p.name || "")
+    };
+  }
+
+  return null;
+}
+
+function packageAgeInfo(dateValue){
+  if(!dateValue) return {cls:"gray", text:"не було", days:null};
+
+  const d = new Date(dateValue);
+  if(isNaN(d.getTime())) return {cls:"gray", text:"невірна дата", days:null};
+
+  const diffDays = (Date.now() - d.getTime()) / 86400000;
+
+  if(diffDays <= 2) return {cls:"green", text:diffDays.toFixed(1).replace(".", ",") + " діб", days:diffDays};
+  if(diffDays <= 3) return {cls:"yellow", text:diffDays.toFixed(1).replace(".", ",") + " діб", days:diffDays};
+  return {cls:"red", text:diffDays.toFixed(1).replace(".", ",") + " діб", days:diffDays};
+}
+
+function openPackagesModal(){
+  renderPackagesModal();
+  document.getElementById("packagesModal")?.classList.add("show");
+}
+
+function closePackagesModal(){
+  document.getElementById("packagesModal")?.classList.remove("show");
+}
+
+function renderPackagesModal(){
+  const box = document.getElementById("packagesBody");
+  if(!box) return;
+
+  const rows = [...(state.positions || [])]
+    .sort((a,b) => {
+      const wa = getPositionSortWeight(a.type);
+      const wb = getPositionSortWeight(b.type);
+
+      if(wa !== wb) return wa - wb;
+
+      return String(a.name || "").localeCompare(String(b.name || ""), "uk");
+    })
+    .map(p => {
+      const last = getLastPackageEvent(p);
+      const info = packageAgeInfo(last?.createdAt);
+      const dateText = last?.createdAt
+        ? new Date(last.createdAt).toLocaleString("uk-UA")
+        : "—";
+
+      return `
+        <tr>
+          <td><b>${esc(p.name || "")}</b><div class="meta">${esc(p.type || "")}</div></td>
+          <td>${getPeopleCount(p)}</td>
+          <td>${dateText}</td>
+          <td><span class="package-lamp ${info.cls}"></span></td>
+          <td>${esc(info.text)}</td>
+        </tr>
+      `;
+    }).join("");
+
+  box.innerHTML = `
+    <table class="packages-table">
+      <thead>
+        <tr>
+          <th>Позиція</th>
+          <th>К-сть В/С</th>
+          <th>Остання посилка</th>
+          <th>Індикатор</th>
+          <th>Минуло</th>
+        </tr>
+      </thead>
+      <tbody>${rows || '<tr><td colspan="5" class="empty">Позицій немає.</td></tr>'}</tbody>
+    </table>
+  `;
+}
+
+
+function formatEventDateUA(value){
+  const d = value ? new Date(value) : new Date();
+  if(isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("uk-UA");
+}
+
+function eventTextWithDate(e){
+  if(!e) return "—";
+
+  const text = String(e.text || "").trim();
+  if(!text) return "—";
+
+  // Якщо дата вже є на початку — не дублюємо.
+  if(/^\d{1,2}\.\d{1,2}\.\d{4}/.test(text)){
+    return text;
+  }
+
+  const date = formatEventDateUA(e.createdAt || e.updatedAt);
+  return date ? (date + " " + text) : text;
+}
+
+function getLastEventForPosition(positionId){
+  const events = (state.events || [])
+    .filter(e => e.positionId === positionId)
+    .sort((a,b) => new Date(b.createdAt || b.updatedAt || 0) - new Date(a.createdAt || a.updatedAt || 0));
+
+  return events[0] || null;
+}
+
+function getLastEventTextForPosition(p){
+  const e = getLastEventForPosition(p.id);
+  if(e) return eventTextWithDate(e);
+
+  const text = String(p.lastEvent || "").trim();
+  return text || "—";
+}
+
+
+
+function getPositionSortWeight(type){
+  const t = String(type || "").trim().toUpperCase();
+
+  if(t === "СП") return 1;
+  if(t === "БПЛА") return 2;
+  if(t === "FPV") return 3;
+  if(t === "КСП") return 999;
+
+  return 100;
 }
 
 function renderPositions(){
@@ -4755,7 +4977,7 @@ function renderLog(){
         ${new Date(e.createdAt).toLocaleString("uk-UA")} • ${esc(e.positionName)} • ${esc(e.type)} ${badge}
       </div>
 
-      <div class="logtext">${esc(e.text)}</div>
+      <div class="logtext">${esc(eventTextWithDate(e))}</div>
     `;
 
     log.appendChild(div);
@@ -7794,6 +8016,26 @@ console.log("Firebase Auth + Roles initialized");
         <button type="button" class="blue" onclick="closeImportOptionsModal()">Скасувати</button>
         <button type="button" class="green" onclick="startExcelImportWithOptions()">Вибрати файл Excel</button>
       </div>
+    </div>
+  </div>
+</div>
+
+
+<div id="packagesModal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Посилки по позиціях</div>
+      <button class="red small" onclick="closePackagesModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="package-note">
+        Індикатор рахується від останньої події типу “Посилка”:
+        1–2 доби — зелений, 2,5–3 доби — жовтий, більше 3 діб — червоний.
+      </div>
+      <div class="package-actions">
+        <button class="blue small" onclick="renderPackagesModal()">Оновити</button>
+      </div>
+      <div id="packagesBody"></div>
     </div>
   </div>
 </div>
