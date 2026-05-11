@@ -2113,7 +2113,7 @@ body.modal-open{
 .pages{display:none!important;}
 
 
-/* ===== V103 FIREBASE AUTH REAL LOGIN ===== */
+/* ===== V105 REAL FIREBASE AUTH SAFE PATCH ===== */
 body:not(.fb-auth-ok) .app{display:none!important;}
 body.fb-auth-ok #authScreen{display:none!important;}
 .auth-info{display:none!important;}
@@ -2133,7 +2133,7 @@ body.fb-auth-ok #authScreen{display:none!important;}
     <input id="loginUsername" placeholder="Логін" autocomplete="username">
     <input id="loginPassword" type="password" placeholder="Пароль" autocomplete="current-password">
 
-    <button type="button" onclick="loginUser()" style="width:100%">Увійти</button>
+    <button type="button" id="loginBtn" onclick="loginUser()" style="width:100%">Увійти</button>
 
     <div id="authError" class="auth-error"></div>
 
@@ -2442,7 +2442,7 @@ function load(){
 }
 function save(){
   localStorage.setItem(KEY,JSON.stringify(state));
-  if(typeof saveBoardToCloud==="function") saveBoardToCloud();
+  if(typeof window.saveBoardToCloud==="function") window.saveBoardToCloud();
 }
 function esc(t){const d=document.createElement("div");d.textContent=t??"";return d.innerHTML}
 function pos(id){return state.positions.find(p=>p.id===id)}
@@ -2499,37 +2499,102 @@ function toggleControls(){controlsVisible=!controlsVisible;renderPositions()}
 const AUTH_KEY="op_board_auth_users_v1";
 const SESSION_KEY="op_board_auth_session_v1";
 
+function simpleHash(str){
+  let h=2166136261;
+  str=String(str||"");
+  for(let i=0;i<str.length;i++){
+    h^=str.charCodeAt(i);
+    h+=(h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24);
+  }
+  return ("00000000"+(h>>>0).toString(16)).slice(-8);
+}
 
-/* removed local simpleHash */
+function getAuthUsers(){
+  let users=[];
+  try{
+    users=JSON.parse(localStorage.getItem(AUTH_KEY)||"[]");
+  }catch(e){
+    users=[];
+  }
 
+  if(!Array.isArray(users) || !users.length){
+    users=[{
+      login:"admin",
+      passHash:simpleHash("admin123"),
+      role:"admin",
+      createdAt:new Date().toISOString()
+    }];
+    localStorage.setItem(AUTH_KEY,JSON.stringify(users));
+  }
 
+  return users;
+}
 
-/* removed local getAuthUsers */
+function saveAuthUsers(users){
+  localStorage.setItem(AUTH_KEY,JSON.stringify(users));
+}
 
+function getSession(){
+  try{
+    return JSON.parse(localStorage.getItem(SESSION_KEY)||"null");
+  }catch(e){
+    return null;
+  }
+}
 
+function setSession(user){
+  localStorage.setItem(SESSION_KEY,JSON.stringify({
+    login:user.login,
+    role:user.role,
+    loginAt:new Date().toISOString()
+  }));
+}
 
-/* removed local saveAuthUsers */
+function clearSession(){
+  localStorage.removeItem(SESSION_KEY);
+}
 
+function loginUser(){
+  const login=(document.getElementById("loginUsername")?.value || "").trim();
+  const pass=(document.getElementById("loginPassword")?.value || "");
+  const err=document.getElementById("authError");
 
+  if(!login || !pass){
+    if(err) err.textContent="Введіть логін і пароль.";
+    return false;
+  }
 
-/* removed local getSession */
+  let users=getAuthUsers();
 
+  // Перший запуск: якщо користувачів ще немає — створюємо ,
+  // але все одно вимагаємо правильний пароль.
+  if(!Array.isArray(users) || users.length===0){
+    users=[{
+      login:"admin",
+      passHash:simpleHash("admin123"),
+      role:"admin",
+      createdAt:new Date().toISOString()
+    }];
+    saveAuthUsers(users);
+  }
 
+  const user=users.find(u=>String(u.login || "").toLowerCase()===login.toLowerCase());
 
-/* removed local setSession */
+  if(!user || String(user.passHash)!==String(simpleHash(pass))){
+    if(err) err.textContent="Невірний логін або пароль.";
+    return false;
+  }
 
+  setSession(user);
+  if(err) err.textContent="";
+  applyAuthState();
+  return true;
+}
 
-
-/* removed local clearSession */
-
-
-
-/* removed local loginUser */
-
-
-
-/* removed local logoutUser */
-
+function logoutUser(){
+  clearSession();
+  applyAuthState();
+}
 
 function hasRole(required){
   const s=getSession();
@@ -2539,13 +2604,38 @@ function hasRole(required){
   return (rank[s.role]||0)>=(rank[required]||0);
 }
 
+function requireRole(required){
+  if(!hasRole(required)){
+    alert("Недостатньо прав доступу.");
+    return false;
+  }
+  return true;
+}
 
-/* removed local requireRole */
+function applyAuthState(){
+  const session=getSession();
+  const auth=document.getElementById("authScreen");
+  const badge=document.getElementById("currentUserBadge");
 
+  if(!session){
+    if(auth)auth.classList.remove("hidden");
+    if(badge)badge.textContent="Гість";
+    document.querySelectorAll("[data-role]").forEach(el=>el.classList.add("admin-hidden"));
+    return;
+  }
 
+  if(auth)auth.classList.add("hidden");
+  if(badge)badge.textContent=session.login+" · "+roleLabel(session.role);
 
-/* removed local applyAuthState */
+  document.querySelectorAll("[data-role]").forEach(el=>{
+    const role=el.getAttribute("data-role");
+    if(hasRole(role)) el.classList.remove("admin-hidden");
+    else el.classList.add("admin-hidden");
+  });
 
+  renderUsersList();
+  if(document.getElementById('adminModal')?.classList.contains('show')) renderAdminUsersList();
+}
 
 function roleLabel(role){
   if(role==="admin")return "адмін";
@@ -2612,9 +2702,17 @@ function addAuthUser(){
   renderUsersList();
 }
 
+function changeUserRole(login,role){
+  if(!requireRole("admin"))return;
 
-/* removed local changeUserRole */
+  const users=getAuthUsers();
+  const u=users.find(x=>x.login===login);
+  if(!u)return;
 
+  u.role=role;
+  saveAuthUsers(users);
+  renderUsersList();
+}
 
 function deleteAuthUser(login){
   if(!requireRole("admin"))return;
@@ -2694,13 +2792,17 @@ window.addEventListener("DOMContentLoaded",()=>{
 
 
 
+function openAdminModal(){
+  if(!requireRole("admin"))return;
+  renderAdminUsersList();
+  const modal=document.getElementById("adminModal");
+  if(modal) modal.classList.add("show");
+}
 
-/* removed local openAdminModal */
-
-
-
-/* removed local closeAdminModal */
-
+function closeAdminModal(){
+  const modal=document.getElementById("adminModal");
+  if(modal) modal.classList.remove("show");
+}
 
 function adminAddUser(){
   if(!requireRole("admin"))return;
@@ -2739,7 +2841,7 @@ function adminAddUser(){
   document.getElementById("adminNewPassword").value="";
 
   renderAdminUsersList();
-  /* applyAuthState removed */
+  applyAuthState();
 
   alert("Користувача додано.");
 }
@@ -2795,7 +2897,7 @@ function adminChangeUserRole(login, role){
   u.role=role;
   saveAuthUsers(users);
   renderAdminUsersList();
-  /* applyAuthState removed */
+  applyAuthState();
 }
 
 function adminResetPassword(login){
@@ -2839,7 +2941,7 @@ function adminDeleteUser(login){
   const users=getAuthUsers().filter(u=>u.login!==login);
   saveAuthUsers(users);
   renderAdminUsersList();
-  /* applyAuthState removed */
+  applyAuthState();
 }
 
 function adminChangeMyPassword(){
@@ -6440,223 +6542,6 @@ thead th:nth-child(7), tbody td:nth-child(7){width:170px!important;min-width:170
 })();
 <\/script>
 
-
-<!-- ===== FIREBASE AUTH + FIRESTORE SYNC v103 ===== -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  onSnapshot,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyC_00H99YJvkJj_l0cgw4o9IirNQFiZ7Jc",
-  authDomain: "operational-board.firebaseapp.com",
-  projectId: "operational-board",
-  storageBucket: "operational-board.firebasestorage.app",
-  messagingSenderId: "568800500719",
-  appId: "1:568800500719:web:6007a2dfab9a045b19741a",
-  measurementId: "G-63JRSJJ2RP"
-};
-
-const appFb = initializeApp(firebaseConfig);
-const authFb = getAuth(appFb);
-const dbFb = getFirestore(appFb);
-const boardRefFb = doc(dbFb, "boards", "main");
-
-let cloudReadyFb = false;
-let cloudApplyingFb = false;
-let lastCloudJsonFb = "";
-let unsubscribeBoardFb = null;
-
-function normalizeBoardStateFb(obj){
-  obj = obj && typeof obj === "object" ? obj : {};
-  return {
-    positions: Array.isArray(obj.positions) ? obj.positions : [],
-    events: Array.isArray(obj.events) ? obj.events : []
-  };
-}
-
-function showCloudToastFb(text, bad){
-  let el = document.getElementById("cloudToast");
-  if(!el){
-    el = document.createElement("div");
-    el.id = "cloudToast";
-    el.style.cssText = "position:fixed;left:16px;bottom:16px;z-index:999999;padding:10px 14px;border-radius:10px;font-weight:900;color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.35);background:#00a862;font-family:Arial,sans-serif";
-    document.body.appendChild(el);
-  }
-  el.textContent = text;
-  el.style.background = bad ? "#ff3d57" : "#00a862";
-  if(!bad) setTimeout(()=>{ if(el) el.remove(); }, 1600);
-}
-
-function userNameFromEmailFb(email){
-  return String(email || "").split("@")[0] || "user";
-}
-
-function setUiUserFb(user){
-  const name = userNameFromEmailFb(user && user.email);
-  const badge = document.getElementById("currentUserBadge");
-  if(badge) badge.textContent = name + " · Firebase";
-  const logout = document.getElementById("logoutBtn");
-  if(logout) logout.textContent = name + " - вийти";
-}
-
-function renderAfterCloudFb(){
-  try{ if(typeof applyFilters === "function") applyFilters(); }catch(e){}
-  try{ if(typeof renderAll === "function") renderAll(); }catch(e){}
-  try{ if(typeof renderLog === "function") renderLog(); }catch(e){}
-}
-
-function startFirestoreSyncFb(){
-  if(unsubscribeBoardFb) return;
-
-  unsubscribeBoardFb = onSnapshot(boardRefFb, async (snap)=>{
-    try{
-      if(!snap.exists()){
-        const localState = normalizeBoardStateFb(window.state || state);
-        lastCloudJsonFb = JSON.stringify(localState);
-        await setDoc(boardRefFb, {
-          positions: localState.positions,
-          events: localState.events,
-          state: localState,
-          updatedAt: serverTimestamp()
-        }, { merge:true });
-        console.log("Firebase board document created");
-        return;
-      }
-
-      const data = snap.data() || {};
-      const incoming = normalizeBoardStateFb(data.state || data);
-      const json = JSON.stringify(incoming);
-
-      if(json === lastCloudJsonFb) return;
-
-      cloudApplyingFb = true;
-
-      if(typeof state !== "undefined") state = incoming;
-      window.state = incoming;
-
-      try{
-        if(typeof KEY !== "undefined") localStorage.setItem(KEY, JSON.stringify(incoming));
-      }catch(e){}
-
-      lastCloudJsonFb = json;
-      renderAfterCloudFb();
-
-      cloudApplyingFb = false;
-      console.log("Realtime update received");
-    }catch(e){
-      cloudApplyingFb = false;
-      console.error("Cloud snapshot error", e);
-      showCloudToastFb("Помилка читання Firebase: " + e.message, true);
-    }
-  }, (err)=>{
-    console.error("Firebase listen error", err);
-    showCloudToastFb("Firebase доступ заборонено або помилка правил", true);
-  });
-}
-
-window.saveBoardToCloud = async function(){
-  if(!cloudReadyFb || cloudApplyingFb) return;
-  try{
-    const current = normalizeBoardStateFb(window.state || state);
-    const json = JSON.stringify(current);
-    if(json === lastCloudJsonFb) return;
-
-    lastCloudJsonFb = json;
-
-    await setDoc(boardRefFb, {
-      positions: current.positions,
-      events: current.events,
-      state: current,
-      updatedAt: serverTimestamp()
-    }, { merge:true });
-
-    console.log("Saved to Firebase");
-  }catch(e){
-    console.error("Firebase save error", e);
-    showCloudToastFb("Не вдалося зберегти у Firebase", true);
-  }
-};
-
-window.loginUser = async function(){
-  const loginEl = document.getElementById("loginUsername");
-  const passEl = document.getElementById("loginPassword");
-  const err = document.getElementById("authError");
-
-  const login = (loginEl?.value || "").trim();
-  const password = passEl?.value || "";
-
-  if(err) err.textContent = "";
-
-  if(!login || !password){
-    if(err) err.textContent = "Введіть логін і пароль.";
-    return;
-  }
-
-  const email = login.includes("@") ? login : (login + "@1mb142.local");
-
-  try{
-    await signInWithEmailAndPassword(authFb, email, password);
-  }catch(e){
-    console.error("Firebase Auth login error", e);
-    if(err) err.textContent = "Невірний логін або пароль.";
-  }
-};
-
-window.logoutUser = async function(){
-  await signOut(authFb);
-};
-
-window.requireRole = function(role){
-  if(!authFb.currentUser){
-    showCloudToastFb("Потрібно увійти.", true);
-    return false;
-  }
-  return true;
-};
-
-onAuthStateChanged(authFb, (user)=>{
-  if(user){
-    document.body.classList.add("fb-auth-ok");
-    const authScreen = document.getElementById("authScreen");
-    if(authScreen) authScreen.classList.add("hidden");
-
-    setUiUserFb(user);
-    cloudReadyFb = true;
-    startFirestoreSyncFb();
-
-    setTimeout(()=>{ try{ window.saveBoardToCloud(); }catch(e){} }, 900);
-
-    console.log("Firebase Auth signed in:", user.email);
-  }else{
-    document.body.classList.remove("fb-auth-ok");
-    const authScreen = document.getElementById("authScreen");
-    if(authScreen) authScreen.classList.remove("hidden");
-
-    cloudReadyFb = false;
-    if(unsubscribeBoardFb){
-      try{ unsubscribeBoardFb(); }catch(e){}
-      unsubscribeBoardFb = null;
-    }
-
-    console.log("Firebase Auth signed out");
-  }
-});
-
-console.log("Firebase Auth initialized");
-</script>
-
 </body>
 </html>`;
 
@@ -6834,6 +6719,231 @@ applyFilters();
   window.addEventListener('load', syncHeaderUser);
   setInterval(syncHeaderUser, 1000);
 })();
+</script>
+
+
+<script>
+window.loginUser = function(){
+  var err = document.getElementById("authError");
+  if(err) err.textContent = "Завантаження авторизації. Спробуйте ще раз за секунду.";
+};
+</script>
+
+
+<!-- ===== FIREBASE AUTH + FIRESTORE SYNC v105 ===== -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  onSnapshot,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC_00H99YJvkJj_l0cgw4o9IirNQFiZ7Jc",
+  authDomain: "operational-board.firebaseapp.com",
+  projectId: "operational-board",
+  storageBucket: "operational-board.firebasestorage.app",
+  messagingSenderId: "568800500719",
+  appId: "1:568800500719:web:6007a2dfab9a045b19741a",
+  measurementId: "G-63JRSJJ2RP"
+};
+
+const appFb = initializeApp(firebaseConfig);
+const authFb = getAuth(appFb);
+const dbFb = getFirestore(appFb);
+const boardRefFb = doc(dbFb, "boards", "main");
+
+let cloudReadyFb = false;
+let cloudApplyingFb = false;
+let lastCloudJsonFb = "";
+let unsubscribeBoardFb = null;
+
+function normalizeBoardStateFb(obj){
+  obj = obj && typeof obj === "object" ? obj : {};
+  return {
+    positions: Array.isArray(obj.positions) ? obj.positions : [],
+    events: Array.isArray(obj.events) ? obj.events : []
+  };
+}
+
+function showCloudToastFb(text, bad){
+  let el = document.getElementById("cloudToast");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "cloudToast";
+    el.style.cssText = "position:fixed;left:16px;bottom:16px;z-index:999999;padding:10px 14px;border-radius:10px;font-weight:900;color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.35);background:#00a862;font-family:Arial,sans-serif";
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.style.background = bad ? "#ff3d57" : "#00a862";
+  if(!bad) setTimeout(()=>{ if(el) el.remove(); }, 1600);
+}
+
+function userNameFromEmailFb(email){
+  return String(email || "").split("@")[0] || "user";
+}
+
+function setUiUserFb(user){
+  const name = userNameFromEmailFb(user && user.email);
+  const badge = document.getElementById("currentUserBadge");
+  if(badge) badge.textContent = name + " · Firebase";
+  const logout = document.getElementById("logoutBtn");
+  if(logout) logout.textContent = name + " - вийти";
+}
+
+function renderAfterCloudFb(){
+  try{ if(typeof applyFilters === "function") applyFilters(); }catch(e){}
+  try{ if(typeof renderAll === "function") renderAll(); }catch(e){}
+  try{ if(typeof renderLog === "function") renderLog(); }catch(e){}
+}
+
+function startFirestoreSyncFb(){
+  if(unsubscribeBoardFb) return;
+
+  unsubscribeBoardFb = onSnapshot(boardRefFb, async (snap)=>{
+    try{
+      if(!snap.exists()){
+        const localState = normalizeBoardStateFb(window.state || state);
+        lastCloudJsonFb = JSON.stringify(localState);
+        await setDoc(boardRefFb, {
+          positions: localState.positions,
+          events: localState.events,
+          state: localState,
+          updatedAt: serverTimestamp()
+        }, { merge:true });
+        console.log("Firebase board document created");
+        return;
+      }
+
+      const data = snap.data() || {};
+      const incoming = normalizeBoardStateFb(data.state || data);
+      const json = JSON.stringify(incoming);
+      if(json === lastCloudJsonFb) return;
+
+      cloudApplyingFb = true;
+      if(typeof state !== "undefined") state = incoming;
+      window.state = incoming;
+
+      try{
+        if(typeof KEY !== "undefined") localStorage.setItem(KEY, JSON.stringify(incoming));
+      }catch(e){}
+
+      lastCloudJsonFb = json;
+      renderAfterCloudFb();
+      cloudApplyingFb = false;
+      console.log("Realtime update received");
+    }catch(e){
+      cloudApplyingFb = false;
+      console.error("Cloud snapshot error", e);
+      showCloudToastFb("Помилка читання Firebase: " + e.message, true);
+    }
+  }, (err)=>{
+    console.error("Firebase listen error", err);
+    showCloudToastFb("Firebase доступ заборонено або помилка правил", true);
+  });
+}
+
+window.saveBoardToCloud = async function(){
+  if(!cloudReadyFb || cloudApplyingFb) return;
+  try{
+    const current = normalizeBoardStateFb(window.state || state);
+    const json = JSON.stringify(current);
+    if(json === lastCloudJsonFb) return;
+
+    lastCloudJsonFb = json;
+    await setDoc(boardRefFb, {
+      positions: current.positions,
+      events: current.events,
+      state: current,
+      updatedAt: serverTimestamp()
+    }, { merge:true });
+    console.log("Saved to Firebase");
+  }catch(e){
+    console.error("Firebase save error", e);
+    showCloudToastFb("Не вдалося зберегти у Firebase", true);
+  }
+};
+
+window.loginUser = async function(){
+  const loginEl = document.getElementById("loginUsername");
+  const passEl = document.getElementById("loginPassword");
+  const err = document.getElementById("authError");
+
+  const login = (loginEl?.value || "").trim();
+  const password = passEl?.value || "";
+
+  if(err) err.textContent = "";
+
+  if(!login || !password){
+    if(err) err.textContent = "Введіть логін і пароль.";
+    return;
+  }
+
+  const email = login.includes("@") ? login : (login + "@1mb142.local");
+
+  try{
+    await signInWithEmailAndPassword(authFb, email, password);
+  }catch(e){
+    console.error("Firebase Auth login error", e);
+    if(err) err.textContent = "Невірний логін або пароль.";
+  }
+};
+
+const loginBtn = document.getElementById("loginBtn");
+if(loginBtn){
+  loginBtn.addEventListener("click", (ev)=>{
+    ev.preventDefault();
+    window.loginUser();
+  });
+}
+
+window.logoutUser = async function(){
+  await signOut(authFb);
+};
+
+window.requireRole = function(role){
+  if(!authFb.currentUser){
+    showCloudToastFb("Потрібно увійти.", true);
+    return false;
+  }
+  return true;
+};
+
+onAuthStateChanged(authFb, (user)=>{
+  if(user){
+    document.body.classList.add("fb-auth-ok");
+    const authScreen = document.getElementById("authScreen");
+    if(authScreen) authScreen.classList.add("hidden");
+
+    setUiUserFb(user);
+    cloudReadyFb = true;
+    startFirestoreSyncFb();
+    setTimeout(()=>{ try{ window.saveBoardToCloud(); }catch(e){} }, 900);
+    console.log("Firebase Auth signed in:", user.email);
+  }else{
+    document.body.classList.remove("fb-auth-ok");
+    const authScreen = document.getElementById("authScreen");
+    if(authScreen) authScreen.classList.remove("hidden");
+
+    cloudReadyFb = false;
+    if(unsubscribeBoardFb){
+      try{ unsubscribeBoardFb(); }catch(e){}
+      unsubscribeBoardFb = null;
+    }
+    console.log("Firebase Auth signed out");
+  }
+});
+
+console.log("Firebase Auth initialized");
 </script>
 
 </body>
