@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Оперативна дошка позицій v75</title>
+<title>Оперативна дошка позицій v109</title>
 <style>
 :root{
   --bg:#081119;--panel:#132231;--head:#20384c;--line:#2f4b61;
@@ -2154,6 +2154,19 @@ body.fb-auth-ok #authScreen{display:none!important;}
 #importOptionsModal .modal{z-index:71001!important;width:min(820px,94vw)!important;max-height:90vh!important;overflow:auto!important;}
 #exportExcelBtn{background:#19364e!important;color:#fff!important;border:1px solid #31516a!important;}
 
+
+
+/* ===== PATCH: AUTO-HIDE TOAST ===== */
+#cloudToast{
+  opacity:1;
+  transform:translateY(0);
+  transition:opacity .25s ease, transform .25s ease;
+}
+#cloudToast.toast-hide{
+  opacity:0!important;
+  transform:translateY(14px)!important;
+}
+
 </style>
 </head>
 <body>
@@ -2259,13 +2272,13 @@ body.fb-auth-ok #authScreen{display:none!important;}
     <div class="drawer-title">Додати подію <button class="red small" onclick="hideDrawer('eventPanel')">×</button></div>
     <div class="form2">
       <select id="eventPosition" onchange="updatePreview()"></select>
-      <select id="eventType" onchange="updatePreview()">
-        <option>Скид БПЛА</option><option>FPV</option><option>Міномет</option><option>Артилерія</option><option>РСЗВ</option><option>Танк</option><option>Стріл. зброя</option><option>ШТУРМ</option>
+      <select id="eventType" onchange="syncQtyUnit();updatePreview()">
+        <option>Скид БПЛА</option><option>FPV</option><option>Авіаудар КАБ</option><option>Міномет</option><option>Артилерія</option><option>РСЗВ</option><option>Танк</option><option>Стріл. зброя</option><option>Штурм</option>
         <option>Втрачено зв’язок</option><option>Відновлено зв’язок</option><option>Знищено позицію</option><option>Відновлено позицію</option><option>Інше</option>
       </select>
     </div>
     <div class="quick">
-      <button onclick="quick('time')">Час</button><button onclick="quick('Скид БПЛА')">Скид</button><button onclick="quick('FPV')">FPV</button><button onclick="quick('Міномет')">Міномет</button><button onclick="quick('Артилерія')">Артилерія</button><button onclick="quick('ШТУРМ')">Штурм</button>
+      <button onclick="quick('time')">Час</button><button onclick="quick('Скид БПЛА')">Скид</button><button onclick="quick('FPV')">FPV</button><button onclick="quick('Авіаудар КАБ')">КАБ</button><button onclick="quick('Міномет')">Міномет</button><button onclick="quick('Артилерія')">Артилерія</button><button onclick="quick('Штурм')">Штурм</button>
     </div>
     <div class="form3">
       <input id="eventTime" placeholder="час: 00.40" oninput="updatePreview()">
@@ -2273,6 +2286,7 @@ body.fb-auth-ok #authScreen{display:none!important;}
       <div class="qtywrap"><input id="eventQty" value="1 од." oninput="updatePreview()"><div class="stepper"><button onclick="changeQty(1)">▲</button><button onclick="changeQty(-1)">▼</button></div></div>
     </div>
     <textarea id="eventLosses" oninput="updatePreview()" style="margin-top:8px">Втрати о/с , овт та мтз - уточняються.</textarea>
+    <input id="enemyLosses" placeholder="Втрати противника: наприклад 1 - 200, 1 - 300" oninput="updatePreview()" style="margin-top:8px">
     <div id="preview" class="preview"></div>
     <button style="width:100%;margin-top:8px" onclick="addEvent()">Записати подію</button>
   </div>
@@ -3610,6 +3624,7 @@ function isPositionFireEvent(type){
   return [
     "FPV",
     "Скид БПЛА",
+    "Авіаудар КАБ",
     "Міномет",
     "Артилерія",
     "РСЗВ",
@@ -3920,10 +3935,40 @@ function deletePosition(id){
   save();applyFilters();
 }
 
+function getQtyUnit(type){
+  return (String(type).toLowerCase()==="штурм") ? "кіл." : "од.";
+}
+
+function normalizeQtyForType(qty, type){
+  qty = String(qty || "").trim();
+  const unit = getQtyUnit(type);
+  if(!qty) return "";
+  const n = qty.match(/\d+/);
+  if(n) return n[0] + " " + unit;
+  return qty;
+}
+
 function buildText(){
   const p=pos(eventPosition.value); if(!p)return "";
-  const t=eventTime.value.trim(), type=eventType.value, qty=eventQty.value.trim(), dir=eventDirection.value.trim(), losses=eventLosses.value.trim();
+  const t=eventTime.value.trim();
+  const type=eventType.value;
+  const qty=normalizeQtyForType(eventQty.value, type);
+  const dir=eventDirection.value.trim();
+  const losses=eventLosses.value.trim();
+  const enemy=(document.getElementById("enemyLosses")?.value || "").trim();
+
+  if(type==="Знищено позицію"){
+    let text=(t?t+" ":"")+"Позиція "+p.name;
+    if(p.coords)text+=" ("+p.coords+")";
+    if(p.village)text+=" "+p.village;
+    text+=" знищена в інженерному відношенні.";
+    if(losses)text+=" "+losses;
+    if(enemy)text+=" Втрати противника - "+enemy+".";
+    return text;
+  }
+
   if(!isFire(type))return (t?t+" ":"")+type+" "+p.name+".";
+
   let text=(t?t+" ":"")+type;
   if(qty)text+=" ("+qty+")";
   text+=" позиція "+p.name;
@@ -3932,7 +3977,15 @@ function buildText(){
   if(dir)text+=" з напрямку "+dir;
   text+=".";
   if(losses)text+=" "+losses;
+  if(enemy)text+=" Втрати противника - "+enemy+".";
   return text;
+}
+function syncQtyUnit(){
+  const type=eventType.value;
+  const qtyEl=document.getElementById("eventQty");
+  if(!qtyEl) return;
+  const n=(qtyEl.value.match(/\d+/)||["1"])[0];
+  qtyEl.value=n+" "+getQtyUnit(type);
 }
 function updatePreview(){preview.textContent=buildText()||"Оберіть позицію та заповніть подію."}
 function addEvent(){
@@ -3967,6 +4020,7 @@ function addEvent(){
       e.updatedAt=new Date().toISOString();
       e.approved=false;
       e.losses=eventLosses.value.trim();
+      e.enemyLosses=(document.getElementById("enemyLosses")?.value || "").trim();
       p.lastEvent=text;
     }
 
@@ -3988,7 +4042,8 @@ function addEvent(){
     text:text,
     createdAt:new Date().toISOString(),
     approved:false,
-    losses:eventLosses.value.trim()
+    losses:eventLosses.value.trim(),
+    enemyLosses:(document.getElementById("enemyLosses")?.value || "").trim()
   });
 
   if(type==="Втрачено зв’язок"){
@@ -4238,6 +4293,7 @@ function editEvent(id){
   eventQty.value=qtyMatch ? qtyMatch[1] : "1 од.";
 
   eventLosses.value=e.losses || "Втрати о/с , овт та мтз - уточняються.";
+  if(document.getElementById("enemyLosses")) enemyLosses.value=e.enemyLosses || "";
 
   const ep=document.getElementById("eventPanel");
   if(ep){
@@ -7047,9 +7103,20 @@ function showCloudToastFb(text, bad){
     el.style.cssText = "position:fixed;left:16px;bottom:16px;z-index:999999;padding:10px 14px;border-radius:10px;font-weight:900;color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.35);background:#00a862;font-family:Arial,sans-serif";
     document.body.appendChild(el);
   }
+
+  clearTimeout(window.cloudToastTimerFb);
+
+  el.classList.remove("toast-hide");
   el.textContent = text;
   el.style.background = bad ? "#ff3d57" : "#00a862";
-  if(!bad) setTimeout(()=>{ if(el) el.remove(); }, 1600);
+
+  window.cloudToastTimerFb = setTimeout(()=>{
+    if(!el) return;
+    el.classList.add("toast-hide");
+    setTimeout(()=>{
+      if(el && el.parentNode) el.remove();
+    }, 280);
+  }, 3000);
 }
 
 function loginFromEmailFb(email){
