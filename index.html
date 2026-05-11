@@ -2586,6 +2586,26 @@ body.fb-auth-ok #authScreen{display:none!important;}
   }
 }
 
+
+/* ===== V125 EVENT DATE FIELD FIX ===== */
+#eventPanel .event-date-time-row{
+  display:grid!important;
+  grid-template-columns:155px 105px minmax(220px,1fr) 170px!important;
+  gap:8px!important;
+  margin-top:8px!important;
+  align-items:center!important;
+}
+#eventPanel #eventDate,
+#eventPanel #eventTime{
+  height:40px!important;
+  min-width:0!important;
+}
+@media(max-width:720px){
+  #eventPanel .event-date-time-row{
+    grid-template-columns:1fr!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -2700,7 +2720,8 @@ body.fb-auth-ok #authScreen{display:none!important;}
     <div class="quick">
       <button onclick="quick('time')">Час</button><button onclick="quick('Скид БПЛА')">Скид</button><button onclick="quick('FPV')">FPV</button><button onclick="quick('Авіаудар КАБ')">КАБ</button><button onclick="quick('Міномет')">Міномет</button><button onclick="quick('Артилерія')">Артилерія</button><button onclick="quick('Штурм')">Штурм</button><button onclick="quick('Посилка')">Посилка</button>
     </div>
-    <div class="form3">
+    <div class="event-date-time-row">
+      <input id="eventDate" type="date" onchange="updatePreview()">
       <input id="eventTime" placeholder="час: 00.40" oninput="updatePreview()">
       <input id="eventDirection" placeholder="напрямок: ГУЛЯЙ ПОЛЕ" oninput="updatePreview()">
       <div class="event-qty-row">
@@ -4398,7 +4419,7 @@ function toggleConn(id){
   p.offlineSince=p.online?null:Date.now();
   const type=p.online?"Відновлено зв’язок":"Втрачено зв’язок";
   const text=nowTime()+" "+type+" "+p.name+(p.online?offline:"")+".";
-  state.events.push({id:uid(),positionId:p.id,positionName:p.name,type,text,createdAt:new Date().toISOString(),approved:false});
+  state.events.push({id:uid(),positionId:p.id,positionName:p.name,type,text,createdAt:getEventCreatedAtISO(),approved:false});
   p.lastEvent=text;save();applyFilters();
 }
 function setDestroyed(id,val){
@@ -4485,8 +4506,42 @@ function getEnemyLossText(){
   return text;
 }
 
+
+function todayInputDate(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function formatInputDateUA(value){
+  if(!value) return "";
+
+  const parts = String(value).split("-");
+  if(parts.length !== 3) return "";
+
+  return `${parts[2]}.${parts[1]}.${parts[0]}`;
+}
+
+function ensureEventDate(){
+  const el = document.getElementById("eventDate");
+  if(el && !el.value){
+    el.value = todayInputDate();
+  }
+}
+
+function eventDatePrefix(){
+  const value = document.getElementById("eventDate")?.value || "";
+  return value ? formatInputDateUA(value) + " " : "";
+}
+
+
 function buildText(){
+  ensureEventDate();
+
   const p=pos(eventPosition.value); if(!p)return "";
+  const datePrefix=eventDatePrefix();
   const t=eventTime.value.trim();
   const type=eventType.value;
   const qty=getEventQtyText();
@@ -4494,8 +4549,10 @@ function buildText(){
   const losses=eventLosses.value.trim();
   const enemy=getEnemyLossText();
 
+  const timePrefix = datePrefix + (t ? t + " " : "");
+
   if(type==="Знищено позицію"){
-    let text=(t?t+" ":"")+"Позиція "+p.name;
+    let text=timePrefix+"Позиція "+p.name;
     if(p.coords)text+=" ("+p.coords+")";
     if(p.village)text+=" "+p.village;
     text+=" знищена в інженерному відношенні.";
@@ -4505,16 +4562,16 @@ function buildText(){
   }
 
   if(type==="Посилка"){
-    let text=(t?t+" ":"")+"Посилка на позицію "+p.name;
+    let text=timePrefix+"Посилка на позицію "+p.name;
     if(p.coords)text+=" ("+p.coords+")";
     if(p.village)text+=" "+p.village;
     text+=".";
     return text;
   }
 
-  if(!isFire(type))return (t?t+" ":"")+type+" "+p.name+".";
+  if(!isFire(type))return timePrefix+type+" "+p.name+".";
 
-  let text=(t?t+" ":"")+type;
+  let text=timePrefix+type;
   if(qty)text+=" ("+qty+")";
   text+=" позиція "+p.name;
   if(p.coords)text+=" ("+p.coords+")";
@@ -4540,7 +4597,20 @@ function syncQtyUnit(){
     unitEl.value = getDefaultUnit(type);
   }
 }
-function updatePreview(){preview.textContent=buildText()||"Оберіть позицію та заповніть подію."}
+function updatePreview(){ensureEventDate(); preview.textContent=buildText()||"Оберіть позицію та заповніть подію."}
+
+function getEventCreatedAtISO(){
+  const dateValue = document.getElementById("eventDate")?.value || todayInputDate();
+  const timeValue = (document.getElementById("eventTime")?.value || "").trim().replace(".", ":");
+  const safeTime = /^\d{1,2}:\d{2}$/.test(timeValue) ? timeValue : "00:00";
+  const d = new Date(`${dateValue}T${safeTime}:00`);
+
+  if(isNaN(d.getTime())) return new Date().toISOString();
+
+  return d.toISOString();
+}
+
+
 function addEvent(){
   if(!requireRole('operator'))return;
   const p=pos(eventPosition.value);
@@ -4575,7 +4645,7 @@ function addEvent(){
       e.losses=eventLosses.value.trim();
       e.enemyLosses=getEnemyLossText();
       p.lastEvent=text;
-      if(type==="Посилка") p.lastPackageAt=new Date().toISOString();
+      if(type==="Посилка") p.lastPackageAt=getEventCreatedAtISO();
     }
 
     editEventId=null;
@@ -4595,7 +4665,7 @@ function addEvent(){
     positionName:p.name,
     type:type,
     text:text,
-    createdAt:new Date().toISOString(),
+    createdAt:getEventCreatedAtISO(),
     approved:false,
     losses:eventLosses.value.trim(),
     enemyLosses:getEnemyLossText()
@@ -4626,7 +4696,7 @@ function addEvent(){
   }
 
   if(type==="Посилка"){
-    p.lastPackageAt=new Date().toISOString();
+    p.lastPackageAt=getEventCreatedAtISO();
   }
 
   p.lastEvent=text;
@@ -4767,7 +4837,7 @@ function markDestroyed(id){
     positionName:p.name,
     type:"Знищено позицію",
     text,
-    createdAt:new Date().toISOString(),
+    createdAt:getEventCreatedAtISO(),
     approved:false
   });
 
@@ -4797,7 +4867,7 @@ function restorePosition(id){
     positionName:p.name,
     type:"Відновлено позицію",
     text,
-    createdAt:new Date().toISOString(),
+    createdAt:getEventCreatedAtISO(),
     approved:false
   });
 
@@ -5156,7 +5226,14 @@ function editEvent(id){
 
   eventType.value=e.type || "Інше";
 
-  const timeMatch=(e.text||"").match(/^(\d{1,2}\.\d{2})/);
+  const dateMatch=(e.text||"").match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if(dateMatch){
+    eventDate.value = dateMatch[3] + "-" + String(dateMatch[2]).padStart(2,"0") + "-" + String(dateMatch[1]).padStart(2,"0");
+  }else{
+    ensureEventDate();
+  }
+
+  const timeMatch=(e.text||"").match(/(?:^|\s)(\d{1,2}\.\d{2})/);
   eventTime.value=timeMatch ? timeMatch[1] : "";
 
   const dirMatch=(e.text||"").match(/з напрямку\s+(.+?)\./i);
