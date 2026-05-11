@@ -4134,15 +4134,24 @@ function applyFilters(){
 function prevPage(){if(page>1){page--;renderPositions()}}
 function nextPage(){const max=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));if(page<max){page++;renderPositions()}}
 function renderStats(){
-  stTotal.textContent=state.positions.length;
-  stOnline.textContent=state.positions.filter(p=>p.online&&!p.destroyed).length;
-  stOffline.textContent=state.positions.filter(p=>!p.online&&!p.destroyed).length;
-  stDestroyed.textContent=state.positions.filter(p=>p.destroyed).length;
-  stEvents.textContent=state.events.length;
+  const base = Array.isArray(filtered) ? filtered : state.positions;
+  const visibleIds = new Set(base.map(p => p.id));
 
-  const personnelTotal = state.positions.reduce((sum,p)=>{
+  stTotal.textContent = base.length;
+
+  stOnline.textContent = base.filter(p => p.online && !p.destroyed).length;
+
+  stOffline.textContent = base.filter(p => !p.online && !p.destroyed).length;
+
+  stDestroyed.textContent = base.filter(p => p.destroyed).length;
+
+  stEvents.textContent = (state.events || []).filter(e =>
+    visibleIds.has(e.positionId)
+  ).length;
+
+  const personnelTotal = base.reduce((sum, p) => {
     return sum + (Array.isArray(p.personnel) ? p.personnel.length : 0);
-  },0);
+  }, 0);
 
   const stPersonnelEl = document.getElementById("stPersonnel");
   if(stPersonnelEl) stPersonnelEl.textContent = personnelTotal;
