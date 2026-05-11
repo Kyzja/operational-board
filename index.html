@@ -2167,6 +2167,122 @@ body.fb-auth-ok #authScreen{display:none!important;}
   transform:translateY(14px)!important;
 }
 
+
+/* ===== V113 EVENT UNITS + ENEMY LOSSES ===== */
+.event-qty-row{
+  display:grid!important;
+  grid-template-columns:78px 92px auto!important;
+  gap:6px!important;
+  align-items:center!important;
+}
+.event-qty-row input,
+.event-qty-row select{
+  height:38px!important;
+}
+.event-qty-row .stepper{
+  position:static!important;
+  display:flex!important;
+  gap:4px!important;
+}
+.enemy-loss-box{
+  margin-top:8px;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#0e1c27;
+}
+.enemy-loss-toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-weight:900;
+  color:#d7e7ff;
+  cursor:pointer;
+  user-select:none;
+}
+.enemy-loss-toggle input{
+  width:18px;
+  height:18px;
+  accent-color:#f8c943;
+}
+.enemy-loss-controls{
+  margin-top:8px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.enemy-loss-row{
+  display:grid;
+  grid-template-columns:80px 1fr;
+  gap:8px;
+}
+.enemy-loss-row input,
+.enemy-loss-row select{
+  height:38px!important;
+}
+.enemy-loss-controls.hidden{
+  display:none!important;
+}
+@media(max-width:720px){
+  .event-qty-row,
+  .enemy-loss-controls,
+  .enemy-loss-row{
+    grid-template-columns:1fr!important;
+  }
+}
+
+
+.toast {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 99999;
+  padding: 14px 20px;
+  border-radius: 14px;
+  font-weight: 900;
+  color: white;
+  background: #ef4444;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.error { background:#ef4444; }
+.toast.success { background:#22c55e; }
+.toast.info { background:#3b82f6; }
+
+
+/* ===== V114 PEOPLE COUNT NEAR POSITION ===== */
+.pos-title-line{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  flex-wrap:wrap!important;
+}
+.people-count-badge{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:30px!important;
+  height:22px!important;
+  padding:0 8px!important;
+  border-radius:999px!important;
+  background:rgba(248,201,67,.18)!important;
+  color:#ffe89b!important;
+  border:1px solid rgba(248,201,67,.42)!important;
+  font-size:12px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+.people-count-badge.zero{
+  background:rgba(158,179,196,.12)!important;
+  color:#9eb3c4!important;
+  border-color:rgba(158,179,196,.25)!important;
+}
+
 </style>
 </head>
 <body>
@@ -2284,10 +2400,48 @@ body.fb-auth-ok #authScreen{display:none!important;}
     <div class="form3">
       <input id="eventTime" placeholder="час: 00.40" oninput="updatePreview()">
       <input id="eventDirection" placeholder="напрямок: ГУЛЯЙ ПОЛЕ" oninput="updatePreview()">
-      <div class="qtywrap"><input id="eventQty" value="1 од." oninput="updatePreview()"><div class="stepper"><button onclick="changeQty(1)">▲</button><button onclick="changeQty(-1)">▼</button></div></div>
+      <div class="event-qty-row">
+        <input id="eventQty" type="number" min="0" value="1" oninput="updatePreview()">
+        <select id="eventUnit" onchange="updatePreview()">
+          <option value="од.">од.</option>
+          <option value="кіл.">кіл.</option>
+          <option value="міна">міна</option>
+          <option value="снаряд">снаряд</option>
+          <option value="постріл">постріл</option>
+          <option value="none">не вказувати</option>
+        </select>
+        <div class="stepper">
+          <button type="button" onclick="changeQty(1)">▲</button>
+          <button type="button" onclick="changeQty(-1)">▼</button>
+        </div>
+      </div>
     </div>
     <textarea id="eventLosses" oninput="updatePreview()" style="margin-top:8px">Втрати о/с , овт та мтз - уточняються.</textarea>
-    <input id="enemyLosses" placeholder="Втрати противника: наприклад 1 - 200, 1 - 300" oninput="updatePreview()" style="margin-top:8px">
+    <div class="enemy-loss-box">
+      <label class="enemy-loss-toggle">
+        <input id="enemyLossesEnabled" type="checkbox" onchange="toggleEnemyLosses()">
+        <span>Є втрати противника</span>
+      </label>
+      <div id="enemyLossesControls" class="enemy-loss-controls hidden">
+        <div class="enemy-loss-row">
+          <input id="enemyLossCount1" type="number" min="0" value="1" oninput="updatePreview()">
+          <select id="enemyLossStatus1" onchange="updatePreview()">
+            <option value="200">200</option>
+            <option value="300">300</option>
+            <option value="500">500</option>
+          </select>
+        </div>
+        <div class="enemy-loss-row">
+          <input id="enemyLossCount2" type="number" min="0" value="0" oninput="updatePreview()">
+          <select id="enemyLossStatus2" onchange="updatePreview()">
+            <option value="300">300</option>
+            <option value="200">200</option>
+            <option value="500">500</option>
+          </select>
+        </div>
+      </div>
+      <input id="enemyLosses" type="hidden" value="">
+    </div>
     <div id="preview" class="preview"></div>
     <button style="width:100%;margin-top:8px" onclick="addEvent()">Записати подію</button>
   </div>
@@ -2656,9 +2810,29 @@ function hasRole(required){
   return (rank[s.role]||0)>=(rank[required]||0);
 }
 
+
+function showToast(message, type = "error") {
+  let toast = document.getElementById("toast");
+
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toast";
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = message;
+  toast.className = "toast show " + type;
+
+  clearTimeout(window.toastTimer);
+
+  window.toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3000);
+}
+
 function requireRole(required){
   if(!hasRole(required)){
-    alert("Недостатньо прав доступу.");
+    showToast("Немає прав: потрібно admin", "error");
     return false;
   }
   return true;
@@ -3936,27 +4110,83 @@ function deletePosition(id){
   save();applyFilters();
 }
 
-function getQtyUnit(type){
-  return (String(type).toLowerCase()==="штурм") ? "кіл." : "од.";
+function getDefaultUnit(type){
+  type = String(type || "").toLowerCase();
+
+  if(type === "штурм") return "кіл.";
+  if(type === "міномет") return "міна";
+  if(type === "артилерія") return "снаряд";
+  if(type === "танк") return "постріл";
+
+  if(type === "скид бпла" || type === "fpv" || type === "авіаудар каб" || type === "рсзв") return "од.";
+
+  return "none";
 }
 
-function normalizeQtyForType(qty, type){
-  qty = String(qty || "").trim();
-  const unit = getQtyUnit(type);
-  if(!qty) return "";
-  const n = qty.match(/\d+/);
-  if(n) return n[0] + " " + unit;
-  return qty;
+function getEventQtyText(){
+  const qtyEl = document.getElementById("eventQty");
+  const unitEl = document.getElementById("eventUnit");
+
+  const unit = unitEl ? unitEl.value : "од.";
+  if(unit === "none") return "";
+
+  const raw = String(qtyEl?.value || "").trim();
+  if(raw === "" || raw === "0") return "";
+
+  const n = parseInt(raw, 10);
+  if(isNaN(n) || n <= 0) return "";
+
+  return n + " " + unit;
+}
+
+function toggleEnemyLosses(){
+  const checked = !!document.getElementById("enemyLossesEnabled")?.checked;
+  const box = document.getElementById("enemyLossesControls");
+
+  if(box){
+    if(checked) box.classList.remove("hidden");
+    else box.classList.add("hidden");
+  }
+
+  updatePreview();
+}
+
+function getEnemyLossText(){
+  const enabled = !!document.getElementById("enemyLossesEnabled")?.checked;
+  if(!enabled) return "";
+
+  const rows = [
+    ["enemyLossCount1", "enemyLossStatus1"],
+    ["enemyLossCount2", "enemyLossStatus2"]
+  ];
+
+  const parts = [];
+
+  rows.forEach(([countId, statusId]) => {
+    const count = parseInt(document.getElementById(countId)?.value || "0", 10);
+    const status = document.getElementById(statusId)?.value || "";
+
+    if(count > 0 && status){
+      parts.push(count + " - " + status);
+    }
+  });
+
+  const text = parts.join(", ");
+
+  const hidden = document.getElementById("enemyLosses");
+  if(hidden) hidden.value = text;
+
+  return text;
 }
 
 function buildText(){
   const p=pos(eventPosition.value); if(!p)return "";
   const t=eventTime.value.trim();
   const type=eventType.value;
-  const qty=normalizeQtyForType(eventQty.value, type);
+  const qty=getEventQtyText();
   const dir=eventDirection.value.trim();
   const losses=eventLosses.value.trim();
-  const enemy=(document.getElementById("enemyLosses")?.value || "").trim();
+  const enemy=getEnemyLossText();
 
   if(type==="Знищено позицію"){
     let text=(t?t+" ":"")+"Позиція "+p.name;
@@ -3981,12 +4211,20 @@ function buildText(){
   if(enemy)text+=" Втрати противника - "+enemy+".";
   return text;
 }
+
 function syncQtyUnit(){
-  const type=eventType.value;
-  const qtyEl=document.getElementById("eventQty");
-  if(!qtyEl) return;
-  const n=(qtyEl.value.match(/\d+/)||["1"])[0];
-  qtyEl.value=n+" "+getQtyUnit(type);
+  const type = eventType.value;
+  const qtyEl = document.getElementById("eventQty");
+  const unitEl = document.getElementById("eventUnit");
+
+  if(qtyEl && (qtyEl.value === "" || String(qtyEl.value).includes(" "))){
+    const n = (String(qtyEl.value).match(/\d+/) || ["1"])[0];
+    qtyEl.value = n;
+  }
+
+  if(unitEl){
+    unitEl.value = getDefaultUnit(type);
+  }
 }
 function updatePreview(){preview.textContent=buildText()||"Оберіть позицію та заповніть подію."}
 function addEvent(){
@@ -4021,7 +4259,7 @@ function addEvent(){
       e.updatedAt=new Date().toISOString();
       e.approved=false;
       e.losses=eventLosses.value.trim();
-      e.enemyLosses=(document.getElementById("enemyLosses")?.value || "").trim();
+      e.enemyLosses=getEnemyLossText();
       p.lastEvent=text;
     }
 
@@ -4044,7 +4282,7 @@ function addEvent(){
     createdAt:new Date().toISOString(),
     approved:false,
     losses:eventLosses.value.trim(),
-    enemyLosses:(document.getElementById("enemyLosses")?.value || "").trim()
+    enemyLosses:getEnemyLossText()
   });
 
   if(type==="Втрачено зв’язок"){
@@ -4089,20 +4327,22 @@ function deleteEvent(id){
 function clearLog(){
   if(!requireRole('admin'))return;if(!confirm("Очистити журнал?"))return;state.events=[];state.positions.forEach(p=>p.lastEvent="—");save();applyFilters()}
 function quick(v){
-  if(v==="time")eventTime.value=nowTime();
-  else{
+  if(v==="time"){
+    eventTime.value=nowTime();
+  }else{
     eventType.value=v;
-    if(v==="Скид БПЛА"||v==="FPV")eventQty.value="1 од.";
-    if(v==="Міномет")eventQty.value="1 міна 120мм";
-    if(v==="Артилерія")eventQty.value="1 снаряд 152мм";
-    if(v==="ШТУРМ")eventQty.value="група";
+    syncQtyUnit();
   }
   updatePreview();
 }
 function changeQty(d){
-  const m=eventQty.value.match(/(\d+)/);
-  if(m)eventQty.value=eventQty.value.replace(/\d+/,Math.max(1,parseInt(m[1])+d));
-  else eventQty.value="1 од.";
+  const qtyEl = document.getElementById("eventQty");
+  if(!qtyEl) return;
+
+  const current = parseInt(qtyEl.value || "0", 10);
+  const next = Math.max(0, (isNaN(current) ? 0 : current) + d);
+
+  qtyEl.value = next;
   updatePreview();
 }
 function getSelectedTypes(){return [...document.querySelectorAll('#typeChecks input:checked')].map(x=>x.value)}
@@ -4259,7 +4499,15 @@ function renderPositions(){
     const badge=p.destroyed?'<span class="badge red">Знищено</span>':(p.online?'<span class="badge green">Активна</span>':'<span class="badge yellow">Без зв’язку</span>');
     const timer=!p.online&&p.offlineSince?'<span class="timer" data-timer="'+p.id+'">'+dur(Date.now()-p.offlineSince)+'</span>':'';
     tr.innerHTML=`
-      <td><div class="posname" onclick="openInfoModal('${p.id}')">${esc(p.name)}</div><div class="meta">${esc(p.type)}</div></td>
+      <td>
+        <div class="pos-title-line">
+          <div class="posname" onclick="openInfoModal('${p.id}')">${esc(p.name)}</div>
+          <span class="people-count-badge ${Array.isArray(p.personnel) && p.personnel.length ? '' : 'zero'}" title="Кількість В/С на позиції">
+            👥 ${Array.isArray(p.personnel) ? p.personnel.length : 0}
+          </span>
+        </div>
+        <div class="meta">${esc(p.type)}</div>
+      </td>
       <td><div>${esc(p.coords||"—")}</div><div class="meta">${esc(p.village||"—")}</div></td>
       <td><span class="lamp ${p.online&&!p.destroyed?'online':'offline'}" onclick="toggleConn('${p.id}')"></span>${p.destroyed?'Знищено':(p.online?'На зв’язку':'Немає зв’язку')}${timer}</td>
       <td>${badge}</td>
