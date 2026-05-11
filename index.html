@@ -2606,6 +2606,207 @@ body.fb-auth-ok #authScreen{display:none!important;}
   }
 }
 
+
+/* ===== V126 EVENT MODAL FRAME FIX ===== */
+#eventPanel.panel:not(.hidden){
+  width:min(760px, calc(100vw - 36px))!important;
+  max-width:calc(100vw - 36px)!important;
+  overflow-x:hidden!important;
+}
+
+#eventPanel *{
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+
+#eventPanel .pad,
+#eventPanel .drawer-title{
+  width:100%!important;
+}
+
+#eventPanel .form2{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  width:100%!important;
+}
+
+#eventPanel .quick{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:8px!important;
+  width:100%!important;
+}
+
+#eventPanel .quick button{
+  min-width:0!important;
+  width:100%!important;
+  padding-left:6px!important;
+  padding-right:6px!important;
+  font-size:13px!important;
+}
+
+#eventPanel .event-date-time-row{
+  grid-template-columns:135px 90px minmax(0,1fr) 170px!important;
+  width:100%!important;
+  overflow:hidden!important;
+}
+
+#eventPanel .event-qty-row{
+  grid-template-columns:62px 78px 1fr!important;
+  min-width:0!important;
+  width:100%!important;
+}
+
+#eventPanel .event-qty-row input,
+#eventPanel .event-qty-row select{
+  min-width:0!important;
+  width:100%!important;
+}
+
+#eventPanel .event-qty-row .stepper{
+  min-width:58px!important;
+  justify-content:flex-end!important;
+}
+
+#eventPanel .event-qty-row .stepper button{
+  width:27px!important;
+  min-width:27px!important;
+}
+
+#eventPanel textarea,
+#eventPanel .preview,
+#eventPanel input,
+#eventPanel select{
+  min-width:0!important;
+}
+
+#eventPanel .preview{
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+}
+
+@media(max-width:720px){
+  #eventPanel.panel:not(.hidden){
+    width:calc(100vw - 18px)!important;
+    max-width:calc(100vw - 18px)!important;
+  }
+
+  #eventPanel .form2,
+  #eventPanel .quick,
+  #eventPanel .event-date-time-row,
+  #eventPanel .event-qty-row{
+    grid-template-columns:1fr!important;
+  }
+
+  #eventPanel .event-qty-row .stepper{
+    justify-content:flex-start!important;
+  }
+}
+
+
+/* ===== V127 PACKAGES TABLE FIT FIX ===== */
+#packagesModal .modal{
+  width:min(980px, calc(100vw - 42px))!important;
+  max-width:calc(100vw - 42px)!important;
+}
+
+#packagesModal .modal-body{
+  overflow-x:hidden!important;
+}
+
+#packagesBody{
+  width:100%!important;
+  max-width:100%!important;
+  overflow-x:hidden!important;
+}
+
+#packagesBody .packages-table{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  table-layout:fixed!important;
+  border-collapse:collapse!important;
+}
+
+#packagesBody .packages-table th,
+#packagesBody .packages-table td{
+  box-sizing:border-box!important;
+  min-width:0!important;
+  max-width:100%!important;
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:anywhere!important;
+  hyphens:auto!important;
+  padding:9px 10px!important;
+  line-height:1.25!important;
+}
+
+#packagesBody .packages-table th:nth-child(1),
+#packagesBody .packages-table td:nth-child(1){
+  width:14%!important;
+}
+
+#packagesBody .packages-table th:nth-child(2),
+#packagesBody .packages-table td:nth-child(2){
+  width:10%!important;
+  text-align:center!important;
+}
+
+#packagesBody .packages-table th:nth-child(3),
+#packagesBody .packages-table td:nth-child(3){
+  width:22%!important;
+}
+
+#packagesBody .packages-table th:nth-child(4),
+#packagesBody .packages-table td:nth-child(4){
+  width:10%!important;
+  text-align:center!important;
+}
+
+#packagesBody .packages-table th:nth-child(5),
+#packagesBody .packages-table td:nth-child(5){
+  width:18%!important;
+  text-align:center!important;
+}
+
+#packagesBody .packages-table th:nth-child(6),
+#packagesBody .packages-table td:nth-child(6){
+  width:14%!important;
+  text-align:center!important;
+}
+
+#packagesBody .package-status-pill{
+  max-width:100%!important;
+  width:auto!important;
+  display:inline-flex!important;
+  white-space:normal!important;
+  line-height:1.15!important;
+  padding:5px 8px!important;
+  font-size:11px!important;
+}
+
+#packagesBody .package-lamp{
+  width:18px!important;
+  height:18px!important;
+}
+
+@media(max-width:760px){
+  #packagesModal .modal{
+    width:calc(100vw - 18px)!important;
+    max-width:calc(100vw - 18px)!important;
+  }
+
+  #packagesBody .packages-table th,
+  #packagesBody .packages-table td{
+    padding:7px 6px!important;
+    font-size:12px!important;
+  }
+
+  #packagesBody .package-status-pill{
+    font-size:10px!important;
+    padding:4px 6px!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -4965,6 +5166,27 @@ function packageStatusMatchesFilter(info, filterValue){
 }
 
 
+
+function isDestroyedPosition(p){
+  if(!p) return false;
+
+  const status = String(p.status || "").toLowerCase();
+  const stateText = String(p.state || "").toLowerCase();
+  const lastEvent = String(p.lastEvent || "").toLowerCase();
+
+  return (
+    p.destroyed === true ||
+    p.isDestroyed === true ||
+    p.online === false && p.destroyed === true ||
+    status.includes("destroy") ||
+    status.includes("знищ") ||
+    stateText.includes("destroy") ||
+    stateText.includes("знищ") ||
+    lastEvent.includes("знищено позицію") ||
+    lastEvent.includes("позиція") && lastEvent.includes("знищена")
+  );
+}
+
 function renderPackagesModal(){
   const box = document.getElementById("packagesBody");
   if(!box) return;
@@ -4974,6 +5196,7 @@ function renderPackagesModal(){
 
   const allItems = [...(state.positions || [])]
     .filter(p => String(p.type || "").toUpperCase() !== "КСП")
+    .filter(p => !isDestroyedPosition(p))
     .map(p => {
       const last = getLastPackageEvent(p);
       const info = packageAgeInfo(last?.createdAt);
@@ -5027,7 +5250,7 @@ function renderPackagesModal(){
       const pillText =
         x.info.cls === "green" ? "Норма" :
         x.info.cls === "yellow" ? "Контроль" :
-        x.info.cls === "red" ? "Прострочено" :
+        x.info.cls === "red" ? "Понад 3 д." :
         "Не було";
 
       return `
