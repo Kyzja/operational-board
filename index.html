@@ -2344,6 +2344,102 @@ body.fb-auth-ok #authScreen{display:none!important;}
   flex-wrap:wrap;
 }
 
+
+/* ===== V120 PACKAGES ANALYTICS ===== */
+.package-analytics-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin:0 0 14px 0;
+}
+.package-analytics-card{
+  background:linear-gradient(145deg,rgba(24,56,78,.92),rgba(10,26,40,.92));
+  border:1px solid #274d67;
+  border-radius:12px;
+  padding:12px;
+  box-shadow:inset 0 0 30px rgba(69,143,190,.08);
+}
+.package-analytics-card b{
+  display:block;
+  font-size:26px;
+  line-height:1;
+  margin-bottom:6px;
+}
+.package-analytics-card span{
+  color:#c9d8e2;
+  font-size:12px;
+  line-height:1.25;
+}
+.package-analytics-card.good b{color:#8fffc5;}
+.package-analytics-card.warn b{color:#ffe89b;}
+.package-analytics-card.bad b{color:#ffc4cc;}
+.package-analytics-card.muted b{color:#d7e7ff;}
+.package-progress{
+  margin:10px 0 14px 0;
+  padding:12px;
+  background:#0e1c27;
+  border:1px solid var(--line);
+  border-radius:12px;
+}
+.package-progress-title{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  font-weight:900;
+  margin-bottom:8px;
+}
+.package-progress-bar{
+  height:13px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#07131d;
+  border:1px solid #274d67;
+}
+.package-progress-fill{
+  height:100%;
+  width:0%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#00e676,#f8c943,#ff3d57);
+}
+.package-summary-line{
+  color:#d7e7ff;
+  font-size:13px;
+  line-height:1.4;
+  margin:8px 0 14px 0;
+}
+.package-status-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:900;
+}
+.package-status-pill.green{background:rgba(0,230,118,.14);color:#8fffc5;}
+.package-status-pill.yellow{background:rgba(248,201,67,.18);color:#ffe89b;}
+.package-status-pill.red{background:rgba(255,61,87,.18);color:#ffc4cc;}
+.package-status-pill.gray{background:rgba(158,179,196,.12);color:#9eb3c4;}
+.packages-table tr.pkg-red td{
+  background:rgba(255,61,87,.12)!important;
+}
+.packages-table tr.pkg-yellow td{
+  background:rgba(248,201,67,.08)!important;
+}
+.packages-table tr.pkg-green td{
+  background:rgba(0,230,118,.06)!important;
+}
+@media(max-width:900px){
+  .package-analytics-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:560px){
+  .package-analytics-grid{
+    grid-template-columns:1fr;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -4613,7 +4709,8 @@ function renderPackagesModal(){
   const box = document.getElementById("packagesBody");
   if(!box) return;
 
-  const rows = [...(state.positions || [])]
+  const items = [...(state.positions || [])]
+    .filter(p => String(p.type || "").toUpperCase() !== "КСП")
     .sort((a,b) => {
       const wa = getPositionSortWeight(a.type);
       const wb = getPositionSortWeight(b.type);
@@ -4625,22 +4722,107 @@ function renderPackagesModal(){
     .map(p => {
       const last = getLastPackageEvent(p);
       const info = packageAgeInfo(last?.createdAt);
+      const people = getPeopleCount(p);
       const dateText = last?.createdAt
         ? new Date(last.createdAt).toLocaleString("uk-UA")
         : "—";
 
+      return {p, last, info, people, dateText};
+    });
+
+  const total = items.length;
+  const peopleTotal = items.reduce((s,x)=>s+x.people,0);
+  const green = items.filter(x=>x.info.cls==="green").length;
+  const yellow = items.filter(x=>x.info.cls==="yellow").length;
+  const red = items.filter(x=>x.info.cls==="red").length;
+  const gray = items.filter(x=>x.info.cls==="gray").length;
+  const withPackage = total - gray;
+  const problem = red + gray;
+  const okPercent = total ? Math.round((green / total) * 100) : 0;
+
+  const oldest = items
+    .filter(x => x.info.days !== null && x.info.days !== undefined)
+    .sort((a,b)=>(b.info.days || 0) - (a.info.days || 0))[0];
+
+  const urgentRows = items
+    .filter(x => x.info.cls === "red" || x.info.cls === "gray")
+    .slice(0,5)
+    .map(x => `${esc(x.p.name || "")} — ${esc(x.info.text)}`)
+    .join("; ");
+
+  const rows = items.map(x => {
+      const pillText =
+        x.info.cls === "green" ? "Норма" :
+        x.info.cls === "yellow" ? "Контроль" :
+        x.info.cls === "red" ? "Прострочено" :
+        "Не було";
+
       return `
-        <tr>
-          <td><b>${esc(p.name || "")}</b><div class="meta">${esc(p.type || "")}</div></td>
-          <td>${getPeopleCount(p)}</td>
-          <td>${dateText}</td>
-          <td><span class="package-lamp ${info.cls}"></span></td>
-          <td>${esc(info.text)}</td>
+        <tr class="pkg-${x.info.cls}">
+          <td><b>${esc(x.p.name || "")}</b><div class="meta">${esc(x.p.type || "")}</div></td>
+          <td>${x.people}</td>
+          <td>${x.dateText}</td>
+          <td><span class="package-lamp ${x.info.cls}"></span></td>
+          <td><span class="package-status-pill ${x.info.cls}">${pillText}</span></td>
+          <td>${esc(x.info.text)}</td>
         </tr>
       `;
     }).join("");
 
   box.innerHTML = `
+    <div class="package-analytics-grid">
+      <div class="package-analytics-card muted">
+        <b>${total}</b>
+        <span>позицій у контролі</span>
+      </div>
+      <div class="package-analytics-card muted">
+        <b>${peopleTotal}</b>
+        <span>В/С на цих позиціях</span>
+      </div>
+      <div class="package-analytics-card good">
+        <b>${green}</b>
+        <span>у нормі до 2 діб</span>
+      </div>
+      <div class="package-analytics-card bad">
+        <b>${problem}</b>
+        <span>потребують уваги</span>
+      </div>
+    </div>
+
+    <div class="package-analytics-grid">
+      <div class="package-analytics-card warn">
+        <b>${yellow}</b>
+        <span>жовта зона 2–3 доби</span>
+      </div>
+      <div class="package-analytics-card bad">
+        <b>${red}</b>
+        <span>червона зона понад 3 доби</span>
+      </div>
+      <div class="package-analytics-card muted">
+        <b>${gray}</b>
+        <span>посилка не фіксувалась</span>
+      </div>
+      <div class="package-analytics-card muted">
+        <b>${withPackage}</b>
+        <span>мають дату останньої посилки</span>
+      </div>
+    </div>
+
+    <div class="package-progress">
+      <div class="package-progress-title">
+        <span>Стан забезпечення посилками</span>
+        <span>${okPercent}% у зеленій зоні</span>
+      </div>
+      <div class="package-progress-bar">
+        <div class="package-progress-fill" style="width:${okPercent}%"></div>
+      </div>
+    </div>
+
+    <div class="package-summary-line">
+      ${oldest ? `Найдовше без оновлення: <b>${esc(oldest.p.name || "")}</b> — ${esc(oldest.info.text)}.` : "Поки немає зафіксованих посилок."}
+      ${urgentRows ? `<br>Першочергово перевірити: ${urgentRows}.` : ""}
+    </div>
+
     <table class="packages-table">
       <thead>
         <tr>
@@ -4648,10 +4830,11 @@ function renderPackagesModal(){
           <th>К-сть В/С</th>
           <th>Остання посилка</th>
           <th>Індикатор</th>
+          <th>Стан</th>
           <th>Минуло</th>
         </tr>
       </thead>
-      <tbody>${rows || '<tr><td colspan="5" class="empty">Позицій немає.</td></tr>'}</tbody>
+      <tbody>${rows || '<tr><td colspan="6" class="empty">Позицій немає.</td></tr>'}</tbody>
     </table>
   `;
 }
