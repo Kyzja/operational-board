@@ -2120,6 +2120,34 @@ body.fb-auth-ok #authScreen{display:none!important;}
 .pages{display:none!important;}
 #authError{min-height:22px!important;}
 
+
+/* ===== V106 FIREBASE ROLES ===== */
+.role-hidden{display:none!important;}
+#rolesAdminModal.show{display:flex!important;z-index:70000!important;}
+#rolesAdminModal .modal{z-index:70001!important;width:min(980px,94vw)!important;max-height:90vh!important;overflow:auto!important;}
+.role-user-row{
+  display:grid;
+  grid-template-columns:1fr 180px auto;
+  gap:10px;
+  align-items:center;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#0e1c27;
+  margin-bottom:8px;
+}
+.role-user-row b{font-size:16px;}
+.role-pill{
+  display:inline-block;
+  padding:5px 10px;
+  border-radius:999px;
+  background:#20384c;
+  font-weight:900;
+}
+@media(max-width:800px){
+  .role-user-row{grid-template-columns:1fr;}
+}
+
 </style>
 </head>
 <body>
@@ -6721,6 +6749,34 @@ applyFilters();
 })();
 </script>
 
+<!-- FIREBASE ROLES ADMIN MODAL -->
+<div id="rolesAdminModal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Адміністрування доступу</div>
+      <button class="red small" type="button" onclick="closeAdminModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="section-title">Користувачі та права</div>
+      <div class="meta" style="margin-bottom:12px">
+        Акаунт створюється у Firebase Authentication. На сайті задається тільки роль.
+      </div>
+
+      <div class="admin-form-grid">
+        <input id="roleLoginInput" placeholder="логін, наприклад ivan">
+        <select id="roleSelectInput">
+          <option value="viewer">viewer — тільки перегляд</option>
+          <option value="operator">operator — редагування</option>
+          <option value="admin">admin — повний доступ</option>
+        </select>
+        <button type="button" class="green" onclick="saveUserRoleFromForm()">Зберегти роль</button>
+      </div>
+
+      <div id="rolesUsersList"></div>
+    </div>
+  </div>
+</div>
+
 
 <script>
 window.loginUser = function(){
@@ -6730,7 +6786,7 @@ window.loginUser = function(){
 </script>
 
 
-<!-- ===== FIREBASE AUTH + FIRESTORE SYNC v105 ===== -->
+<!-- ===== FIREBASE AUTH + FIRESTORE SYNC + ROLES v106 ===== -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -6743,8 +6799,12 @@ import {
   getFirestore,
   doc,
   setDoc,
+  getDoc,
   onSnapshot,
-  serverTimestamp
+  serverTimestamp,
+  collection,
+  getDocs,
+  deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -6766,6 +6826,20 @@ let cloudReadyFb = false;
 let cloudApplyingFb = false;
 let lastCloudJsonFb = "";
 let unsubscribeBoardFb = null;
+let currentLoginFb = "";
+let currentRoleFb = "viewer";
+
+const roleRankFb = {viewer:1, operator:2, admin:3};
+
+function normalizeRoleFb(role){
+  role = String(role || "viewer").toLowerCase();
+  return ["admin","operator","viewer"].includes(role) ? role : "viewer";
+}
+
+function hasRoleFb(required){
+  required = required || "viewer";
+  return (roleRankFb[currentRoleFb] || 0) >= (roleRankFb[required] || 0);
+}
 
 function normalizeBoardStateFb(obj){
   obj = obj && typeof obj === "object" ? obj : {};
@@ -6788,22 +6862,73 @@ function showCloudToastFb(text, bad){
   if(!bad) setTimeout(()=>{ if(el) el.remove(); }, 1600);
 }
 
-function userNameFromEmailFb(email){
+function loginFromEmailFb(email){
   return String(email || "").split("@")[0] || "user";
 }
 
 function setUiUserFb(user){
-  const name = userNameFromEmailFb(user && user.email);
+  const name = loginFromEmailFb(user && user.email);
   const badge = document.getElementById("currentUserBadge");
-  if(badge) badge.textContent = name + " · Firebase";
+  if(badge) badge.textContent = name + " · " + currentRoleFb;
   const logout = document.getElementById("logoutBtn");
   if(logout) logout.textContent = name + " - вийти";
+}
+
+function applyRoleUiFb(){
+  document.body.dataset.role = currentRoleFb;
+
+  document.querySelectorAll("[data-role]").forEach(el=>{
+    const need = el.getAttribute("data-role") || "viewer";
+    const ok = hasRoleFb(need);
+    el.classList.toggle("role-hidden", !ok);
+  });
+
+  document.querySelectorAll(".row-actions button").forEach(btn=>{
+    const ok = hasRoleFb("operator");
+    btn.disabled = !ok;
+    btn.style.opacity = ok ? "" : ".45";
+    btn.style.pointerEvents = ok ? "" : "none";
+  });
+
+  const actionHeader = document.getElementById("actionHeader");
+  if(actionHeader) actionHeader.style.display = hasRoleFb("operator") ? "" : "none";
 }
 
 function renderAfterCloudFb(){
   try{ if(typeof applyFilters === "function") applyFilters(); }catch(e){}
   try{ if(typeof renderAll === "function") renderAll(); }catch(e){}
   try{ if(typeof renderLog === "function") renderLog(); }catch(e){}
+  applyRoleUiFb();
+}
+
+async function ensureUserRoleFb(user){
+  currentLoginFb = loginFromEmailFb(user.email);
+  const ref = doc(dbFb, "users", currentLoginFb);
+  const snap = await getDoc(ref);
+
+  if(!snap.exists()){
+    const defaultRole = currentLoginFb === "admin" ? "admin" : "viewer";
+    await setDoc(ref, {
+      login: currentLoginFb,
+      email: user.email,
+      uid: user.uid,
+      role: defaultRole,
+      createdAt: serverTimestamp(),
+      lastLoginAt: serverTimestamp()
+    }, {merge:true});
+    currentRoleFb = defaultRole;
+  }else{
+    const data = snap.data() || {};
+    currentRoleFb = normalizeRoleFb(data.role);
+    await setDoc(ref, {
+      email: user.email,
+      uid: user.uid,
+      lastLoginAt: serverTimestamp()
+    }, {merge:true});
+  }
+
+  setUiUserFb(user);
+  applyRoleUiFb();
 }
 
 function startFirestoreSyncFb(){
@@ -6827,9 +6952,11 @@ function startFirestoreSyncFb(){
       const data = snap.data() || {};
       const incoming = normalizeBoardStateFb(data.state || data);
       const json = JSON.stringify(incoming);
+
       if(json === lastCloudJsonFb) return;
 
       cloudApplyingFb = true;
+
       if(typeof state !== "undefined") state = incoming;
       window.state = incoming;
 
@@ -6839,6 +6966,7 @@ function startFirestoreSyncFb(){
 
       lastCloudJsonFb = json;
       renderAfterCloudFb();
+
       cloudApplyingFb = false;
       console.log("Realtime update received");
     }catch(e){
@@ -6854,18 +6982,26 @@ function startFirestoreSyncFb(){
 
 window.saveBoardToCloud = async function(){
   if(!cloudReadyFb || cloudApplyingFb) return;
+  if(!hasRoleFb("operator")){
+    showCloudToastFb("Немає прав на зміну даних", true);
+    return;
+  }
+
   try{
     const current = normalizeBoardStateFb(window.state || state);
     const json = JSON.stringify(current);
     if(json === lastCloudJsonFb) return;
 
     lastCloudJsonFb = json;
+
     await setDoc(boardRefFb, {
       positions: current.positions,
       events: current.events,
       state: current,
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp(),
+      updatedBy: currentLoginFb
     }, { merge:true });
+
     console.log("Saved to Firebase");
   }catch(e){
     console.error("Firebase save error", e);
@@ -6911,39 +7047,171 @@ window.logoutUser = async function(){
 };
 
 window.requireRole = function(role){
+  role = role || "viewer";
   if(!authFb.currentUser){
     showCloudToastFb("Потрібно увійти.", true);
+    return false;
+  }
+  if(!hasRoleFb(role)){
+    showCloudToastFb("Немає прав: потрібно " + role, true);
     return false;
   }
   return true;
 };
 
-onAuthStateChanged(authFb, (user)=>{
+window.openAdminModal = async function(){
+  if(!window.requireRole("admin")) return;
+
+  const modal = document.getElementById("rolesAdminModal");
+  if(modal) modal.classList.add("show");
+
+  await window.renderRolesUsers();
+};
+
+window.closeAdminModal = function(){
+  const modal = document.getElementById("rolesAdminModal");
+  if(modal) modal.classList.remove("show");
+};
+
+window.renderRolesUsers = async function(){
+  if(!window.requireRole("admin")) return;
+
+  const box = document.getElementById("rolesUsersList");
+  if(!box) return;
+
+  box.innerHTML = '<div class="empty">Завантаження користувачів...</div>';
+
+  try{
+    const snap = await getDocs(collection(dbFb, "users"));
+    const rows = [];
+
+    snap.forEach(docSnap=>{
+      const d = docSnap.data() || {};
+      rows.push({
+        id: docSnap.id,
+        login: d.login || docSnap.id,
+        email: d.email || "",
+        role: normalizeRoleFb(d.role)
+      });
+    });
+
+    rows.sort((a,b)=>a.login.localeCompare(b.login, "uk"));
+
+    if(!rows.length){
+      box.innerHTML = '<div class="empty">Поки немає користувачів. Вони зʼявляться після першого входу або після ручного додавання ролі.</div>';
+      return;
+    }
+
+    box.innerHTML = rows.map(u=>`
+      <div class="role-user-row">
+        <div>
+          <b>${u.login}</b><br>
+          <span class="meta">${u.email || "email ще не зафіксований"}</span>
+        </div>
+        <select data-role-login="${u.login}">
+          <option value="viewer" ${u.role==="viewer"?"selected":""}>viewer</option>
+          <option value="operator" ${u.role==="operator"?"selected":""}>operator</option>
+          <option value="admin" ${u.role==="admin"?"selected":""}>admin</option>
+        </select>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+          <button type="button" class="green small" onclick="saveUserRoleFromRow('${u.login}')">Зберегти</button>
+          <button type="button" class="red small" onclick="deleteUserRole('${u.login}')">Видалити роль</button>
+        </div>
+      </div>
+    `).join("");
+  }catch(e){
+    console.error(e);
+    box.innerHTML = '<div class="empty">Помилка завантаження ролей: '+e.message+'</div>';
+  }
+};
+
+window.saveUserRole = async function(login, role){
+  if(!window.requireRole("admin")) return;
+
+  login = String(login || "").trim().toLowerCase();
+  role = normalizeRoleFb(role);
+
+  if(!login){
+    showCloudToastFb("Вкажіть логін", true);
+    return;
+  }
+
+  await setDoc(doc(dbFb, "users", login), {
+    login,
+    role,
+    updatedAt: serverTimestamp(),
+    updatedBy: currentLoginFb
+  }, {merge:true});
+
+  showCloudToastFb("Роль збережено: " + login + " → " + role, false);
+
+  if(login === currentLoginFb){
+    currentRoleFb = role;
+    applyRoleUiFb();
+  }
+
+  await window.renderRolesUsers();
+};
+
+window.saveUserRoleFromForm = async function(){
+  const login = document.getElementById("roleLoginInput")?.value || "";
+  const role = document.getElementById("roleSelectInput")?.value || "viewer";
+  await window.saveUserRole(login, role);
+};
+
+window.saveUserRoleFromRow = async function(login){
+  const sel = document.querySelector('select[data-role-login="'+login+'"]');
+  await window.saveUserRole(login, sel ? sel.value : "viewer");
+};
+
+window.deleteUserRole = async function(login){
+  if(!window.requireRole("admin")) return;
+
+  login = String(login || "").trim().toLowerCase();
+  if(login === "admin"){
+    showCloudToastFb("Роль admin видаляти не можна", true);
+    return;
+  }
+
+  if(!confirm("Видалити роль для " + login + "? Акаунт Firebase не видаляється.")) return;
+
+  await deleteDoc(doc(dbFb, "users", login));
+  showCloudToastFb("Роль видалена", false);
+  await window.renderRolesUsers();
+};
+
+onAuthStateChanged(authFb, async (user)=>{
   if(user){
     document.body.classList.add("fb-auth-ok");
     const authScreen = document.getElementById("authScreen");
     if(authScreen) authScreen.classList.add("hidden");
 
-    setUiUserFb(user);
+    await ensureUserRoleFb(user);
+
     cloudReadyFb = true;
     startFirestoreSyncFb();
     setTimeout(()=>{ try{ window.saveBoardToCloud(); }catch(e){} }, 900);
-    console.log("Firebase Auth signed in:", user.email);
+
+    console.log("Firebase Auth signed in:", user.email, "role:", currentRoleFb);
   }else{
     document.body.classList.remove("fb-auth-ok");
     const authScreen = document.getElementById("authScreen");
     if(authScreen) authScreen.classList.remove("hidden");
 
+    currentLoginFb = "";
+    currentRoleFb = "viewer";
     cloudReadyFb = false;
+
     if(unsubscribeBoardFb){
       try{ unsubscribeBoardFb(); }catch(e){}
       unsubscribeBoardFb = null;
     }
+
     console.log("Firebase Auth signed out");
   }
 });
 
-console.log("Firebase Auth initialized");
+console.log("Firebase Auth + Roles initialized");
 </script>
 
 </body>
