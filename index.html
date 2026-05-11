@@ -2180,9 +2180,7 @@ body.fb-auth-ok #authScreen{display:none!important;}
     <div class="top-actions">
       <div class="top-actions-row">
         <span id="currentUserBadge" class="user-badge visually-hidden-badge">admin · адмін</span>
-<button type="button" id="logoutBtn" onclick="logoutUser()" class="blue top-icon-btn icon-admin">
-  Вийти
-</button>
+        <button type="button" id="logoutBtn" onclick="logoutUser()" class="blue top-icon-btn icon-admin">Адмін - вийти</button>
         <button type="button" id="createCardBtn" onclick="openCreateModal()" data-role="operator" class="top-icon-btn icon-plus">Створити карточку</button>
         <button type="button" id="topEventBtn" class="green top-icon-btn icon-plus" onclick="toggleDrawer('eventPanel')" data-role="operator">Подія</button>
         <button type="button" id="importExcelBtn" class="blue top-icon-btn icon-import" onclick="openExcelImport()" data-role="admin">Імпорт</button>
@@ -6869,11 +6867,26 @@ function loginFromEmailFb(email){
 }
 
 function setUiUserFb(user){
-  const name = loginFromEmailFb(user && user.email);
-  const badge = document.getElementById("currentUserBadge");
-  if(badge) badge.textContent = name + " · " + currentRoleFb;
-  const logout = document.getElementById("logoutBtn");
-  if(logout) logout.textContent = name + " - вийти";
+
+  const name =
+    loginFromEmailFb(user && user.email);
+
+  const badge =
+    document.getElementById("currentUserBadge");
+
+  if(badge){
+    badge.textContent =
+      name + " · " + currentRoleFb;
+  }
+
+  const logout =
+    document.getElementById("logoutBtn");
+
+  if(logout){
+    logout.textContent =
+      name + " - вийти";
+  }
+
 }
 
 function applyRoleUiFb(){
