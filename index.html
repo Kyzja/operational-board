@@ -2440,6 +2440,152 @@ body.fb-auth-ok #authScreen{display:none!important;}
   }
 }
 
+
+/* ===== V121 PACKAGES FILTERS ===== */
+.package-filter-bar{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:10px;
+  align-items:end;
+  margin:0 0 14px 0;
+  padding:12px;
+  background:#0e1c27;
+  border:1px solid var(--line);
+  border-radius:12px;
+}
+.package-filter-bar label{
+  display:block;
+  color:#d7e7ff;
+  font-size:12px;
+  font-weight:900;
+  margin-bottom:6px;
+}
+.package-filter-bar select{
+  height:40px!important;
+}
+.package-filter-bar button{
+  height:40px!important;
+}
+@media(max-width:760px){
+  .package-filter-bar{
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* ===== V122 CARD MODAL SCROLL + STICKY SAVE ===== */
+#cardModal.show{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+#cardModal .modal{
+  height:min(92vh,1180px)!important;
+  max-height:92vh!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+#cardModal .modal-head{
+  flex:0 0 auto!important;
+}
+#cardModal .modal-body{
+  flex:1!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  padding-bottom:92px!important;
+}
+#cardModal .modal-actions{
+  position:sticky!important;
+  bottom:0!important;
+  z-index:10!important;
+  background:linear-gradient(180deg,rgba(16,32,45,.72),#10202d 35%)!important;
+  border-top:1px solid var(--line)!important;
+  padding:12px 0 4px 0!important;
+  margin-top:16px!important;
+}
+#cardModal .modal-actions button{
+  min-height:42px!important;
+}
+
+
+/* ===== V122 PACKAGES CHECKBOX FILTER PANEL ===== */
+.package-filter-toggle-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin:0 0 10px 0;
+}
+.package-filter-toggle-row button{
+  min-height:38px!important;
+}
+#packageFilterPanel.hidden{
+  display:none!important;
+}
+.package-filter-panel{
+  margin:0 0 14px 0;
+  padding:12px;
+  background:#0e1c27;
+  border:1px solid var(--line);
+  border-radius:12px;
+}
+.package-filter-title{
+  font-weight:900;
+  color:#d7e7ff;
+  margin-bottom:8px;
+}
+.package-checks{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:10px;
+}
+.package-checks label{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#172b3b;
+  font-weight:900;
+  color:#d7e7ff;
+  cursor:pointer;
+  user-select:none;
+}
+.package-checks input{
+  width:16px;
+  height:16px;
+  accent-color:#f8c943;
+}
+.package-checks label.sp-locked{
+  background:rgba(248,201,67,.16);
+  border-color:rgba(248,201,67,.45);
+  color:#ffe89b;
+}
+.package-status-select{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+  align-items:end;
+}
+.package-status-select label{
+  display:block;
+  color:#d7e7ff;
+  font-size:12px;
+  font-weight:900;
+  margin-bottom:6px;
+}
+.package-status-select button{
+  height:40px!important;
+}
+@media(max-width:760px){
+  .package-status-select{
+    grid-template-columns:1fr;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -4697,6 +4843,7 @@ function packageAgeInfo(dateValue){
 }
 
 function openPackagesModal(){
+  document.getElementById("packageFilterPanel")?.classList.add("hidden");
   renderPackagesModal();
   document.getElementById("packagesModal")?.classList.add("show");
 }
@@ -4705,20 +4852,58 @@ function closePackagesModal(){
   document.getElementById("packagesModal")?.classList.remove("show");
 }
 
+
+
+function togglePackageFilterPanel(){
+  const panel = document.getElementById("packageFilterPanel");
+  if(panel) panel.classList.toggle("hidden");
+}
+
+function getSelectedPackageTypes(){
+  const selected = new Set(["СП"]); // СП завжди включений
+
+  document.querySelectorAll(".pkg-type-check").forEach(ch => {
+    if(ch.checked) selected.add(String(ch.value || "").toUpperCase());
+  });
+
+  return selected;
+}
+
+function resetPackageFilters(){
+  document.querySelectorAll(".pkg-type-check").forEach(ch => ch.checked = true);
+
+  const statusFilter = document.getElementById("packageStatusFilter");
+  if(statusFilter) statusFilter.value = "all";
+
+  renderPackagesModal();
+}
+
+function packageTypeMatchesFilter(p, selectedTypes){
+  const t = String(p?.type || "").trim().toUpperCase();
+
+  if(t === "СП") return true; // СП завжди показуємо
+  if(t === "БПЛА") return selectedTypes.has("БПЛА");
+  if(t === "FPV") return selectedTypes.has("FPV");
+
+  return selectedTypes.has("OTHER");
+}
+
+function packageStatusMatchesFilter(info, filterValue){
+  if(filterValue === "all") return true;
+  if(filterValue === "problem") return info.cls === "red" || info.cls === "gray";
+  return info.cls === filterValue;
+}
+
+
 function renderPackagesModal(){
   const box = document.getElementById("packagesBody");
   if(!box) return;
 
-  const items = [...(state.positions || [])]
+  const selectedTypes = getSelectedPackageTypes();
+  const statusFilter = document.getElementById("packageStatusFilter")?.value || "all";
+
+  const allItems = [...(state.positions || [])]
     .filter(p => String(p.type || "").toUpperCase() !== "КСП")
-    .sort((a,b) => {
-      const wa = getPositionSortWeight(a.type);
-      const wb = getPositionSortWeight(b.type);
-
-      if(wa !== wb) return wa - wb;
-
-      return String(a.name || "").localeCompare(String(b.name || ""), "uk");
-    })
     .map(p => {
       const last = getLastPackageEvent(p);
       const info = packageAgeInfo(last?.createdAt);
@@ -4728,6 +4913,24 @@ function renderPackagesModal(){
         : "—";
 
       return {p, last, info, people, dateText};
+    });
+
+  const items = allItems
+    .filter(x => packageTypeMatchesFilter(x.p, selectedTypes))
+    .filter(x => packageStatusMatchesFilter(x.info, statusFilter))
+    .sort((a,b) => {
+      const wa = getPositionSortWeight(a.p.type);
+      const wb = getPositionSortWeight(b.p.type);
+
+      // СП завжди в пріоритеті зверху, далі БпЛА, FPV, потім інші
+      if(wa !== wb) return wa - wb;
+
+      const sa = a.info.cls === "red" ? 1 : a.info.cls === "gray" ? 2 : a.info.cls === "yellow" ? 3 : 4;
+      const sb = b.info.cls === "red" ? 1 : b.info.cls === "gray" ? 2 : b.info.cls === "yellow" ? 3 : 4;
+
+      if(sa !== sb) return sa - sb;
+
+      return String(a.p.name || "").localeCompare(String(b.p.name || ""), "uk");
     });
 
   const total = items.length;
@@ -4773,7 +4976,7 @@ function renderPackagesModal(){
     <div class="package-analytics-grid">
       <div class="package-analytics-card muted">
         <b>${total}</b>
-        <span>позицій у контролі</span>
+        <span>позицій за поточним фільтром</span>
       </div>
       <div class="package-analytics-card muted">
         <b>${peopleTotal}</b>
@@ -4819,7 +5022,7 @@ function renderPackagesModal(){
     </div>
 
     <div class="package-summary-line">
-      ${oldest ? `Найдовше без оновлення: <b>${esc(oldest.p.name || "")}</b> — ${esc(oldest.info.text)}.` : "Поки немає зафіксованих посилок."}
+      ${oldest ? `Найдовше без оновлення: <b>${esc(oldest.p.name || "")}</b> — ${esc(oldest.info.text)}.` : "Поки немає зафіксованих посилок у цьому фільтрі."}
       ${urgentRows ? `<br>Першочергово перевірити: ${urgentRows}.` : ""}
     </div>
 
@@ -4834,7 +5037,7 @@ function renderPackagesModal(){
           <th>Минуло</th>
         </tr>
       </thead>
-      <tbody>${rows || '<tr><td colspan="6" class="empty">Позицій немає.</td></tr>'}</tbody>
+      <tbody>${rows || '<tr><td colspan="6" class="empty">За вибраним фільтром позицій немає.</td></tr>'}</tbody>
     </table>
   `;
 }
@@ -8215,9 +8418,48 @@ console.log("Firebase Auth + Roles initialized");
         Індикатор рахується від останньої події типу “Посилка”:
         1–2 доби — зелений, 2,5–3 доби — жовтий, більше 3 діб — червоний.
       </div>
-      <div class="package-actions">
+      <div class="package-filter-toggle-row">
+        <button class="blue small" onclick="togglePackageFilterPanel()">Фільтр ▾</button>
         <button class="blue small" onclick="renderPackagesModal()">Оновити</button>
       </div>
+
+      <div id="packageFilterPanel" class="package-filter-panel hidden">
+        <div class="package-filter-title">Які позиції показувати</div>
+        <div class="package-checks">
+          <label class="sp-locked">
+            <input type="checkbox" id="pkgTypeSP" value="СП" checked disabled>
+            СП завжди
+          </label>
+          <label>
+            <input type="checkbox" class="pkg-type-check" value="БПЛА" checked onchange="renderPackagesModal()">
+            БпЛА
+          </label>
+          <label>
+            <input type="checkbox" class="pkg-type-check" value="FPV" checked onchange="renderPackagesModal()">
+            FPV
+          </label>
+          <label>
+            <input type="checkbox" class="pkg-type-check" value="OTHER" checked onchange="renderPackagesModal()">
+            Інші
+          </label>
+        </div>
+
+        <div class="package-status-select">
+          <div>
+            <label>Стан посилки</label>
+            <select id="packageStatusFilter" onchange="renderPackagesModal()">
+              <option value="all">Усі стани</option>
+              <option value="green">Зелена зона</option>
+              <option value="yellow">Жовта зона</option>
+              <option value="red">Червона зона</option>
+              <option value="gray">Не було посилки</option>
+              <option value="problem">Потребують уваги</option>
+            </select>
+          </div>
+          <button class="blue small" onclick="resetPackageFilters()">Скинути</button>
+        </div>
+      </div>
+
       <div id="packagesBody"></div>
     </div>
   </div>
