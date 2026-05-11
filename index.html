@@ -2148,6 +2148,12 @@ body.fb-auth-ok #authScreen{display:none!important;}
   .role-user-row{grid-template-columns:1fr;}
 }
 
+
+/* ===== V108 IMPORT/EXPORT OPTIONS ===== */
+#importOptionsModal.show{display:flex!important;z-index:71000!important;}
+#importOptionsModal .modal{z-index:71001!important;width:min(820px,94vw)!important;max-height:90vh!important;overflow:auto!important;}
+#exportExcelBtn{background:#19364e!important;color:#fff!important;border:1px solid #31516a!important;}
+
 </style>
 </head>
 <body>
@@ -2180,10 +2186,13 @@ body.fb-auth-ok #authScreen{display:none!important;}
     <div class="top-actions">
       <div class="top-actions-row">
         <span id="currentUserBadge" class="user-badge visually-hidden-badge">admin · адмін</span>
-        <button type="button" id="logoutBtn" onclick="logoutUser()" class="blue top-icon-btn icon-admin">Адмін - вийти</button>
+<button type="button" id="logoutBtn" onclick="logoutUser()" class="blue top-icon-btn icon-admin">
+  admin
+</button>
         <button type="button" id="createCardBtn" onclick="openCreateModal()" data-role="operator" class="top-icon-btn icon-plus">Створити карточку</button>
         <button type="button" id="topEventBtn" class="green top-icon-btn icon-plus" onclick="toggleDrawer('eventPanel')" data-role="operator">Подія</button>
         <button type="button" id="importExcelBtn" class="blue top-icon-btn icon-import" onclick="openExcelImport()" data-role="admin">Імпорт</button>
+        <button type="button" id="exportExcelBtn" class="blue top-icon-btn icon-import" onclick="exportOperationalBoardXLSX()" data-role="admin">Експорт</button>
       </div>
 
       <input type="file" id="excelImportInput" accept=".xlsx,.xls" style="display:none" onchange="importExcelFile(event)">
@@ -3016,6 +3025,43 @@ function adminChangeMyPassword(){
 
 function openExcelImport(){
   if(!requireRole('admin'))return;
+  const modal=document.getElementById("importOptionsModal");
+  if(modal){
+    modal.classList.add("show");
+  }else{
+    const input=document.getElementById("excelImportInput");
+    if(input){ input.value=""; input.click(); }
+  }
+}
+
+function closeImportOptionsModal(){
+  document.getElementById("importOptionsModal")?.classList.remove("show");
+}
+
+function getImportOptions(){
+  return {
+    positions: !!document.getElementById("impPositions")?.checked,
+    personnel: !!document.getElementById("impPersonnel")?.checked,
+    events: !!document.getElementById("impEvents")?.checked,
+    clearSelected: !!document.getElementById("impClearSelected")?.checked,
+    clearPersonnelForImported: !!document.getElementById("impClearPersonnel")?.checked,
+    updatePositions: !!document.getElementById("impUpdatePositions")?.checked
+  };
+}
+
+function startExcelImportWithOptions(){
+  if(!requireRole('admin'))return;
+
+  const opts=getImportOptions();
+
+  if(!opts.positions && !opts.personnel && !opts.events){
+    alert("Виберіть хоча б один розділ для імпорту.");
+    return;
+  }
+
+  window.pendingImportOptions=opts;
+  closeImportOptionsModal();
+
   const input=document.getElementById("excelImportInput");
   if(!input){
     alert("Поле імпорту не знайдено.");
@@ -3087,6 +3133,17 @@ function importExcelFile(event){
   const file=event.target.files?.[0];
   if(!file) return;
 
+  const opts=window.pendingImportOptions || {
+    positions:true,
+    personnel:true,
+    events:false,
+    clearSelected:false,
+    clearPersonnelForImported:true,
+    updatePositions:true
+  };
+
+  window.pendingImportOptions=null;
+
   if(typeof XLSX==="undefined"){
     alert("Бібліотека імпорту Excel не завантажилась. Потрібен інтернет для першого відкриття або локально вбудована бібліотека SheetJS.");
     return;
@@ -3103,77 +3160,80 @@ function importExcelFile(event){
       const personnelSheet=findSheetName(workbook,["Особовий_склад","Особовий склад","Personnel"]);
       const eventsSheet=findSheetName(workbook,["Події","Events"]);
 
-      if(!positionsSheet){
+      if(opts.positions && !positionsSheet){
         alert("Не знайдено лист «Позиції».");
         return;
       }
 
-      const replaceAll=confirm("Очистити поточні дані перед імпортом?\n\nOK — замінити все.\nСкасувати — додати/оновити до існуючих.");
+      const posRows=(opts.positions && positionsSheet) ? readSheetRows(workbook,positionsSheet) : [];
+      const peopleRows=(opts.personnel && personnelSheet) ? readSheetRows(workbook,personnelSheet) : [];
+      const eventRows=(opts.events && eventsSheet) ? readSheetRows(workbook,eventsSheet) : [];
 
-      if(replaceAll){
-        state.positions=[];
-        state.events=[];
+      if(opts.clearSelected){
+        if(opts.positions){
+          state.positions=[];
+        }
+
+        if(opts.events){
+          state.events=[];
+        }
       }
 
-      const posRows=readSheetRows(workbook,positionsSheet);
-      const peopleRows=personnelSheet ? readSheetRows(workbook,personnelSheet) : [];
-      const eventRows=eventsSheet ? readSheetRows(workbook,eventsSheet) : [];
-
-      const idMap={};
       let addedPositions=0, updatedPositions=0, skippedPositions=0;
-      let addedPeople=0, skippedPeople=0;
+      let addedPeople=0, updatedPeople=0, skippedPeople=0;
       let addedEvents=0, skippedEvents=0;
 
-      // Import positions
-      posRows.forEach((r,idx)=>{
-        const rawId=normalizeImportText(r["ID_позиції"]);
-        const type=normalizeImportText(r["Тип"]) || "СП";
-        const name=normalizeImportText(r["Назва"]);
-        const coords=normalizeImportText(r["Координати"]);
-        const village=normalizeImportText(r["Н.п."] || r["НП"] || r["Населений пункт"]);
-        const online=normalizeBoolUA(r["На_зв’язку"]);
-        const destroyed=normalizeBoolUA(r["Знищено"]);
-        const note=normalizeImportText(r["Примітка"]);
+      if(opts.positions){
+        posRows.forEach((r,idx)=>{
+          const rawId=normalizeImportText(r["ID_позиції"]);
+          const type=normalizeImportText(r["Тип"]) || "СП";
+          const name=normalizeImportText(r["Назва"]);
+          const coords=normalizeImportText(r["Координати"]);
+          const village=normalizeImportText(r["Н.п."] || r["НП"] || r["Населений пункт"]);
+          const online=normalizeBoolUA(r["На_зв’язку"]);
+          const destroyed=normalizeBoolUA(r["Знищено"]);
+          const note=normalizeImportText(r["Примітка"]);
 
-        if(!name){
-          skippedPositions++;
-          return;
-        }
+          if(!name){
+            skippedPositions++;
+            return;
+          }
 
-        const id=rawId || ("IMP_"+name.replace(/\s+/g,"_")+"_"+idx);
-        idMap[id]=id;
+          const id=rawId || ("IMP_"+name.replace(/\s+/g,"_")+"_"+idx);
+          let p=state.positions.find(x=>x.importId===id || x.id===id || x.name.toLowerCase()===name.toLowerCase());
 
-        let p=state.positions.find(x=>x.importId===id || x.id===id || x.name.toLowerCase()===name.toLowerCase());
-
-        if(p){
-          p.importId=id;
-          p.type=type;
-          p.name=name;
-          p.coords=coords;
-          p.village=village;
-          p.online=destroyed ? false : online;
-          p.destroyed=destroyed;
-          p.note=note;
-          if(!p.personnel) p.personnel=[];
-          updatedPositions++;
-        }else{
-          state.positions.push({
-            id:uid(),
-            importId:id,
-            type,
-            name,
-            coords,
-            village,
-            online: destroyed ? false : online,
-            destroyed,
-            offlineSince: (!online || destroyed) ? Date.now() : null,
-            note,
-            lastEvent:"—",
-            personnel:[]
-          });
-          addedPositions++;
-        }
-      });
+          if(p && opts.updatePositions){
+            p.importId=id;
+            p.type=type;
+            p.name=name;
+            p.coords=coords;
+            p.village=village;
+            p.online=destroyed ? false : online;
+            p.destroyed=destroyed;
+            p.note=note;
+            if(!p.personnel) p.personnel=[];
+            updatedPositions++;
+          }else if(p && !opts.updatePositions){
+            skippedPositions++;
+          }else{
+            state.positions.push({
+              id:uid(),
+              importId:id,
+              type,
+              name,
+              coords,
+              village,
+              online: destroyed ? false : online,
+              destroyed,
+              offlineSince: (!online || destroyed) ? Date.now() : null,
+              note,
+              lastEvent:"—",
+              personnel:[]
+            });
+            addedPositions++;
+          }
+        });
+      }
 
       function findImportedPosition(idValue,nameValue){
         const id=normalizeImportText(idValue);
@@ -3191,124 +3251,151 @@ function importExcelFile(event){
         return null;
       }
 
-      // Clear personnel for imported positions if replacing all, or when updating by file? 
-      // To avoid duplicates, for every position present in Excel we reset personnel before adding from Excel.
-      const importedPositionIds = new Set(posRows.map(r=>normalizeImportText(r["ID_позиції"])).filter(Boolean));
-      state.positions.forEach(p=>{
-        if(importedPositionIds.has(p.importId)){
-          p.personnel=[];
-        }
-      });
+      if(opts.personnel && opts.clearPersonnelForImported){
+        const affectedKeys=new Set();
 
-      // Import personnel
-      peopleRows.forEach(r=>{
-        const p=findImportedPosition(r["ID_позиції"], r["Назва_позиції"]);
-        if(!p){
-          skippedPeople++;
-          return;
-        }
-
-        const person={
-          unit:normalizeImportText(r["Підрозділ"]),
-          position:normalizeImportText(r["Посада"]),
-          rank:normalizeImportText(r["Звання"]),
-          name:normalizeImportText(r["ПІБ"]),
-          callsign:normalizeImportText(r["Позивний"]),
-          status:normalizeImportText(r["Статус"]),
-          note:normalizeImportText(r["Примітка"])
-        };
-
-        if(!person.name && !person.callsign && !person.position){
-          skippedPeople++;
-          return;
-        }
-
-        if(!p.personnel) p.personnel=[];
-        p.personnel.push(person);
-        addedPeople++;
-      });
-
-      // Import events
-      eventRows.forEach(r=>{
-        const p=findImportedPosition(r["ID_позиції"], r["Назва_позиції"]);
-        if(!p){
-          skippedEvents++;
-          return;
-        }
-
-        const type=normalizeImportText(r["Тип_події"]) || "Інше";
-        let text=normalizeImportText(r["Текст_події"]);
-        const time=normalizeImportText(r["Час"]);
-        const qty=normalizeImportText(r["Кількість"]);
-        const dir=normalizeImportText(r["Напрямок"]);
-        const approved=normalizeBoolUA(r["Затверджено"]);
-        const note=normalizeImportText(r["Примітка"]);
-
-        if(!text){
-          text = `${time ? time+" " : ""}${type}`;
-          if(qty) text += ` (${qty})`;
-          text += ` позиція ${p.name}`;
-          if(p.coords) text += ` (${p.coords})`;
-          if(p.village) text += ` ${p.village}`;
-          if(dir) text += ` з напрямку ${dir}`;
-          text += ". Втрати о/с , овт та мтз - уточняються.";
-        }
-
-        const createdAt=normalizeDateTimeFromExcel(r["Дата"], r["Час"]);
-
-        // prevent exact duplicate by position + type + createdAt + text
-        const duplicate=state.events.some(e=>
-          e.positionId===p.id &&
-          e.type===type &&
-          e.createdAt===createdAt &&
-          e.text===text
-        );
-
-        if(duplicate){
-          skippedEvents++;
-          return;
-        }
-
-        state.events.push({
-          id:uid(),
-          positionId:p.id,
-          positionName:p.name,
-          type,
-          text,
-          createdAt,
-          approved,
-          losses:"",
-          note
+        posRows.forEach(r=>{
+          const id=normalizeImportText(r["ID_позиції"]);
+          const name=normalizeImportText(r["Назва"]);
+          if(id) affectedKeys.add("id:"+id);
+          if(name) affectedKeys.add("name:"+name.toLowerCase());
         });
 
-        p.lastEvent=text;
+        peopleRows.forEach(r=>{
+          const id=normalizeImportText(r["ID_позиції"]);
+          const name=normalizeImportText(r["Назва_позиції"]);
+          if(id) affectedKeys.add("id:"+id);
+          if(name) affectedKeys.add("name:"+name.toLowerCase());
+        });
 
-        if(type==="Втрачено зв’язок"){
-          p.online=false;
-          p.destroyed=false;
-          p.offlineSince=Date.now();
-        }
+        state.positions.forEach(p=>{
+          if(affectedKeys.has("id:"+p.importId) || affectedKeys.has("id:"+p.id) || affectedKeys.has("name:"+String(p.name||"").toLowerCase())){
+            p.personnel=[];
+          }
+        });
+      }
 
-        if(type==="Відновлено зв’язок"){
-          p.online=true;
-          p.destroyed=false;
-          p.offlineSince=null;
-        }
+      if(opts.personnel){
+        peopleRows.forEach(r=>{
+          const p=findImportedPosition(r["ID_позиції"], r["Назва_позиції"]);
+          if(!p){
+            skippedPeople++;
+            return;
+          }
 
-        if(type==="Знищено позицію"){
-          p.destroyed=true;
-          p.online=false;
-          p.offlineSince=Date.now();
-        }
+          const person={
+            unit:normalizeImportText(r["Підрозділ"]),
+            position:normalizeImportText(r["Посада"]),
+            rank:normalizeImportText(r["Звання"]),
+            name:normalizeImportText(r["ПІБ"]),
+            callsign:normalizeImportText(r["Позивний"]),
+            status:normalizeImportText(r["Статус"]),
+            note:normalizeImportText(r["Примітка"])
+          };
 
-        if(type==="Відновлено позицію"){
-          p.destroyed=false;
-          p.online=true;
-          p.offlineSince=null;
-        }
+          if(!person.name && !person.callsign && !person.position){
+            skippedPeople++;
+            return;
+          }
 
-        addedEvents++;
-      });
+          if(!p.personnel) p.personnel=[];
+
+          const duplicate=p.personnel.find(x=>
+            String(x.name||"").toLowerCase()===String(person.name||"").toLowerCase() &&
+            String(x.position||"").toLowerCase()===String(person.position||"").toLowerCase()
+          );
+
+          if(duplicate){
+            Object.assign(duplicate, person);
+            updatedPeople++;
+          }else{
+            p.personnel.push(person);
+            addedPeople++;
+          }
+        });
+      }
+
+      if(opts.events){
+        eventRows.forEach(r=>{
+          const p=findImportedPosition(r["ID_позиції"], r["Назва_позиції"]);
+          if(!p){
+            skippedEvents++;
+            return;
+          }
+
+          const type=normalizeImportText(r["Тип_події"]) || "Інше";
+          let text=normalizeImportText(r["Текст_події"]);
+          const time=normalizeImportText(r["Час"]);
+          const qty=normalizeImportText(r["Кількість"]);
+          const dir=normalizeImportText(r["Напрямок"]);
+          const approved=normalizeBoolUA(r["Затверджено"]);
+          const note=normalizeImportText(r["Примітка"]);
+
+          if(!text){
+            text = `${time ? time+" " : ""}${type}`;
+            if(qty) text += ` (${qty})`;
+            text += ` позиція ${p.name}`;
+            if(p.coords) text += ` (${p.coords})`;
+            if(p.village) text += ` ${p.village}`;
+            if(dir) text += ` з напрямку ${dir}`;
+            text += ". Втрати о/с , овт та мтз - уточняються.";
+          }
+
+          const createdAt=normalizeDateTimeFromExcel(r["Дата"], r["Час"]);
+
+          const duplicate=state.events.some(e=>
+            e.positionId===p.id &&
+            e.type===type &&
+            e.createdAt===createdAt &&
+            e.text===text
+          );
+
+          if(duplicate){
+            skippedEvents++;
+            return;
+          }
+
+          state.events.push({
+            id:uid(),
+            positionId:p.id,
+            positionName:p.name,
+            type,
+            text,
+            createdAt,
+            approved,
+            losses:"",
+            note
+          });
+
+          p.lastEvent=text;
+
+          if(type==="Втрачено зв’язок"){
+            p.online=false;
+            p.destroyed=false;
+            p.offlineSince=Date.now();
+          }
+
+          if(type==="Відновлено зв’язок"){
+            p.online=true;
+            p.destroyed=false;
+            p.offlineSince=null;
+          }
+
+          if(type==="Знищено позицію"){
+            p.destroyed=true;
+            p.online=false;
+            p.offlineSince=Date.now();
+          }
+
+          if(type==="Відновлено позицію"){
+            p.destroyed=false;
+            p.online=true;
+            p.offlineSince=null;
+          }
+
+          addedEvents++;
+        });
+      }
 
       save();
       applyFilters();
@@ -3320,9 +3407,11 @@ function importExcelFile(event){
         "Позиції оновлено: "+updatedPositions+"\\n"+
         "Позиції пропущено: "+skippedPositions+"\\n\\n"+
         "В/с додано: "+addedPeople+"\\n"+
+        "В/с оновлено: "+updatedPeople+"\\n"+
         "В/с пропущено: "+skippedPeople+"\\n\\n"+
         "Події додано: "+addedEvents+"\\n"+
-        "Події пропущено: "+skippedEvents
+        "Події пропущено: "+skippedEvents+"\\n\\n"+
+        (opts.events ? "Журнал подій імпортовано." : "Журнал подій залишено без змін.")
       );
 
     }catch(err){
@@ -6696,6 +6785,126 @@ function renderAnalytics(){
 }
 
 
+
+function exportOperationalBoardXLSX(){
+  if(!requireRole('admin'))return;
+
+  if(typeof XLSX==="undefined"){
+    alert("Бібліотека Excel не завантажилась. Потрібен інтернет або локально вбудована бібліотека SheetJS.");
+    return;
+  }
+
+  function yesNo(v){ return v ? "так" : "ні"; }
+
+  function dateUA(value){
+    const d=value ? new Date(value) : new Date();
+    if(isNaN(d.getTime())) return "";
+    return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")+"."+d.getFullYear();
+  }
+
+  function timeUA(value){
+    const d=value ? new Date(value) : new Date();
+    if(isNaN(d.getTime())) return "";
+    return String(d.getHours()).padStart(2,"0")+"."+String(d.getMinutes()).padStart(2,"0");
+  }
+
+  const wb=XLSX.utils.book_new();
+
+  const positions=[
+    ["ID_позиції","Тип","Назва","Координати","Н.п.","На_зв’язку","Знищено","Примітка"]
+  ];
+
+  state.positions.forEach((p,idx)=>{
+    positions.push([
+      p.importId || p.id || ("POS"+String(idx+1).padStart(3,"0")),
+      p.type || "",
+      p.name || "",
+      p.coords || "",
+      p.village || "",
+      yesNo(!!p.online),
+      yesNo(!!p.destroyed),
+      p.note || ""
+    ]);
+  });
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(positions), "Позиції");
+
+  const people=[
+    ["ID_позиції","Назва_позиції","Підрозділ","Посада","Звання","ПІБ","Позивний","Статус","Примітка"]
+  ];
+
+  state.positions.forEach((p,idx)=>{
+    const pid=p.importId || p.id || ("POS"+String(idx+1).padStart(3,"0"));
+    (p.personnel || []).forEach(person=>{
+      people.push([
+        pid,
+        p.name || "",
+        person.unit || "",
+        person.position || "",
+        person.rank || "",
+        person.name || "",
+        person.callsign || "",
+        person.status || "",
+        person.note || ""
+      ]);
+    });
+  });
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(people), "Особовий_склад");
+
+  const events=[
+    ["Дата","Час","ID_позиції","Назва_позиції","Тип_події","Кількість","Напрямок","Текст_події","Затверджено","Примітка"]
+  ];
+
+  state.events.forEach(e=>{
+    const p=state.positions.find(x=>x.id===e.positionId) || {};
+    events.push([
+      dateUA(e.createdAt),
+      timeUA(e.createdAt),
+      p.importId || p.id || "",
+      e.positionName || p.name || "",
+      e.type || "",
+      "",
+      "",
+      e.text || "",
+      yesNo(!!e.approved),
+      e.note || ""
+    ]);
+  });
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(events), "Події");
+
+  const dict=[
+    ["Типи_позицій","Статуси_вс","Типи_подій","Так_Ні","Ролі"],
+    ["СП","на позиції","Скид БПЛА","так","admin"],
+    ["ВП","резерв","FPV","ні","operator"],
+    ["БпЛА","відрядження","Міномет","","viewer"],
+    ["FPV","лікування","Артилерія","",""],
+    ["КСП","відпустка","РСЗВ","",""],
+    ["МВГ","СЗЧ","Танк","",""],
+    ["МБ","300","Стріл. зброя","",""],
+    ["Ретранслятор","200","ШТУРМ","",""],
+    ["МП","500","Втрачено зв’язок","",""],
+    ["Тех.Евак","","Відновлено зв’язок","",""],
+    ["ПКП","","Знищено позицію","",""],
+    ["Інше","","Відновлено позицію","",""]
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dict), "Довідники");
+
+  const inst=[
+    ["Інструкція"],
+    ["Цей файл експортований з оперативної дошки."],
+    ["Для імпорту назад можна редагувати листи: Позиції, Особовий_склад, Події."],
+    ["Якщо потрібно не чіпати журнал — під час імпорту не ставте галочку «Події / журнал»."],
+    ["ID_позиції бажано не змінювати: по ньому система зіставляє позиції та особовий склад."],
+    ["Аркуш «Події» експортується для резервної копії та перенесення журналу."]
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(inst), "Інструкція");
+
+  const stamp=new Date().toISOString().slice(0,19).replace(/[T:]/g,"-");
+  XLSX.writeFile(wb, "Експорт_оперативної_дошки_"+stamp+".xlsx");
+}
+
 function renderAll(){renderStats();renderSelect();renderPositions();renderLog();updatePreview()}
 setInterval(()=>{document.querySelectorAll("[data-timer]").forEach(el=>{const p=pos(el.dataset.timer);if(p&&!p.online&&p.offlineSince)el.textContent=dur(Date.now()-p.offlineSince)})},1000);
 applyFilters();
@@ -6727,27 +6936,8 @@ applyFilters();
 </script>
 
 
-<script>
-(function(){
-  function syncHeaderUser(){
-    try{
-      var s = JSON.parse(localStorage.getItem('op_board_auth_session_v1') || 'null');
-      var btn = document.getElementById('logoutBtn');
-      if(btn){
-        var label = s && s.login ? s.login : 'Адмін';
-        btn.textContent = label.charAt(0).toUpperCase() + label.slice(1) + ' - вийти';
-        btn.classList.add('icon-admin');
-      }
-    }catch(e){}
-  }
-  var oldApply = window.applyAuthState;
-  if(typeof oldApply === 'function'){
-    window.applyAuthState = function(){ oldApply.apply(this, arguments); syncHeaderUser(); };
-  }
-  window.addEventListener('load', syncHeaderUser);
-  setInterval(syncHeaderUser, 1000);
-})();
-</script>
+
+
 
 <!-- FIREBASE ROLES ADMIN MODAL -->
 <div id="rolesAdminModal" class="modal-backdrop">
@@ -6867,26 +7057,18 @@ function loginFromEmailFb(email){
 }
 
 function setUiUserFb(user){
+  const name = loginFromEmailFb(user && user.email);
 
-  const name =
-    loginFromEmailFb(user && user.email);
-
-  const badge =
-    document.getElementById("currentUserBadge");
-
+  const badge = document.getElementById("currentUserBadge");
   if(badge){
-    badge.textContent =
-      name + " · " + currentRoleFb;
+    badge.textContent = name + " · " + currentRoleFb;
   }
 
-  const logout =
-    document.getElementById("logoutBtn");
-
+  const logout = document.getElementById("logoutBtn");
   if(logout){
-    logout.textContent =
-      name + " - вийти";
+    logout.textContent = name + " - вийти";
+    logout.setAttribute("data-current-login", name);
   }
-
 }
 
 function applyRoleUiFb(){
@@ -7228,6 +7410,61 @@ onAuthStateChanged(authFb, async (user)=>{
 
 console.log("Firebase Auth + Roles initialized");
 </script>
+
+
+<!-- IMPORT OPTIONS MODAL -->
+<div id="importOptionsModal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Імпорт даних з Excel</div>
+      <button class="red small" type="button" onclick="closeImportOptionsModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="section-title">Що імпортувати</div>
+
+      <label class="toggle-line" style="margin:8px 0">
+        <input type="checkbox" id="impPositions" checked>
+        <span>Позиції — додати нові / оновити існуючі</span>
+      </label>
+
+      <label class="toggle-line" style="margin:8px 0">
+        <input type="checkbox" id="impPersonnel" checked>
+        <span>Особовий склад — додати/оновити по позиціях</span>
+      </label>
+
+      <label class="toggle-line" style="margin:8px 0">
+        <input type="checkbox" id="impEvents">
+        <span>Події / журнал — імпортувати події з файлу</span>
+      </label>
+
+      <div class="section-title">Режим імпорту</div>
+
+      <label class="toggle-line" style="margin:8px 0">
+        <input type="checkbox" id="impClearSelected">
+        <span>Очистити вибрані розділи перед імпортом</span>
+      </label>
+
+      <label class="toggle-line" style="margin:8px 0">
+        <input type="checkbox" id="impClearPersonnel" checked>
+        <span>Перед завантаженням в/с очистити в/с тільки на імпортованих позиціях</span>
+      </label>
+
+      <label class="toggle-line" style="margin:8px 0">
+        <input type="checkbox" id="impUpdatePositions" checked>
+        <span>Оновлювати існуючі позиції, якщо збігається ID або назва</span>
+      </label>
+
+      <div class="meta" style="margin:12px 0;color:#ffd37a">
+        За замовчуванням журнал подій НЕ імпортується і НЕ стирається.
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px">
+        <button type="button" class="blue" onclick="closeImportOptionsModal()">Скасувати</button>
+        <button type="button" class="green" onclick="startExcelImportWithOptions()">Вибрати файл Excel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
