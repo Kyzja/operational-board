@@ -2807,6 +2807,191 @@ body.fb-auth-ok #authScreen{display:none!important;}
   }
 }
 
+
+
+/* ===== V136 FIT HEADER + LAST EVENT TEXT ===== */
+:root{
+  --dashW:1680px!important;
+  --sideW:164px!important;
+  --gapW:18px!important;
+}
+.app{
+  width:min(var(--dashW), calc(100vw - 32px))!important;
+  max-width:var(--dashW)!important;
+}
+.topbar{
+  grid-template-columns:max-content max-content minmax(0,1fr)!important;
+  gap:16px!important;
+}
+.title-block{
+  width:auto!important;
+  min-width:max-content!important;
+}
+.title-block h1,
+h1{
+  overflow:visible!important;
+  text-overflow:clip!important;
+  max-width:none!important;
+  white-space:nowrap!important;
+  font-size:32px!important;
+}
+.live-datetime,
+#liveDateTime{
+  min-width:300px!important;
+  width:300px!important;
+  font-size:22px!important;
+  padding:0 14px!important;
+}
+.top-actions-row{
+  gap:8px!important;
+}
+.top-actions-row button{
+  height:48px!important;
+  padding:0 14px!important;
+  font-size:14px!important;
+}
+#createCardBtn{min-width:176px!important;}
+#topEventBtn{min-width:96px!important;}
+#logoutBtn{min-width:142px!important;}
+.dashboard-grid{
+  grid-template-columns:minmax(0,1fr) var(--sideW)!important;
+  gap:var(--gapW)!important;
+}
+.dashboard-sidebar .side-btn,
+.dashboard-sidebar button{
+  padding:0 14px!important;
+  font-size:14px!important;
+  min-height:70px!important;
+}
+.dashboard-content .panel,
+.dashboard-content .table-wrap{
+  overflow:hidden!important;
+}
+.dashboard-content table{
+  table-layout:fixed!important;
+  width:100%!important;
+}
+.dashboard-content thead th:nth-child(1),
+.dashboard-content tbody td:nth-child(1){width:13%!important;}
+.dashboard-content thead th:nth-child(2),
+.dashboard-content tbody td:nth-child(2){width:17%!important;}
+.dashboard-content thead th:nth-child(3),
+.dashboard-content tbody td:nth-child(3){width:17%!important;}
+.dashboard-content thead th:nth-child(4),
+.dashboard-content tbody td:nth-child(4){width:10%!important;}
+.dashboard-content thead th:nth-child(5),
+.dashboard-content tbody td:nth-child(5){width:7%!important;text-align:center!important;}
+.dashboard-content thead th:nth-child(6),
+.dashboard-content tbody td:nth-child(6){width:36%!important;}
+.dashboard-content tbody td{
+  height:auto!important;
+  min-height:66px!important;
+  vertical-align:middle!important;
+}
+.dashboard-content tbody td:nth-child(6){
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+  line-height:1.25!important;
+  font-size:14px!important;
+  padding-top:10px!important;
+  padding-bottom:10px!important;
+}
+.dashboard-content tbody td:nth-child(6) br{
+  display:block!important;
+}
+.posname{font-size:17px!important;}
+.meta{font-size:12px!important;}
+@media(max-width:1250px){
+  .topbar{grid-template-columns:1fr!important;}
+  .title-block{min-width:0!important;}
+  .title-block h1,h1{overflow:hidden!important;text-overflow:ellipsis!important;}
+  .live-datetime,#liveDateTime{width:100%!important;min-width:0!important;}
+  .dashboard-content .table-wrap{overflow:auto!important;}
+  .dashboard-content table{min-width:1120px!important;}
+}
+
+
+/* ===== V138 LAST EVENT FULL DAY/TIME VISIBLE ===== */
+tbody td:nth-child(6){
+  white-space:normal!important;
+  line-height:1.28!important;
+  word-break:normal!important;
+  overflow-wrap:anywhere!important;
+}
+
+
+/* ===== V139 ANALYTICS PERIOD CALENDAR FILTER ===== */
+.analytics-period-filter{
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+  flex-wrap:wrap!important;
+  margin:8px 0 16px 0!important;
+  padding:12px!important;
+  border:1px solid var(--line)!important;
+  border-radius:12px!important;
+  background:rgba(10,25,37,.55)!important;
+}
+.analytics-period-filter label{
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  color:#d7e7ff!important;
+  font-weight:900!important;
+}
+.analytics-period-filter input[type="date"]{
+  width:165px!important;
+  height:38px!important;
+  padding:7px 9px!important;
+}
+.analytics-period-filter button{
+  height:38px!important;
+  padding:0 12px!important;
+  border-radius:9px!important;
+}
+.analytics-period-filter .period-help{
+  color:var(--muted)!important;
+  font-size:12px!important;
+  width:100%!important;
+}
+
+
+/* ===== V140 ANALYTICS CALENDAR FIXED VISIBLE ===== */
+.analytics-period-filter{
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+  flex-wrap:wrap!important;
+  margin:8px 0 16px 0!important;
+  padding:12px!important;
+  border:1px solid var(--line)!important;
+  border-radius:12px!important;
+  background:rgba(10,25,37,.75)!important;
+}
+.analytics-period-filter label{
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  color:#d7e7ff!important;
+  font-weight:900!important;
+}
+.analytics-period-filter input[type="date"]{
+  width:165px!important;
+  height:38px!important;
+  padding:7px 9px!important;
+}
+.analytics-period-filter button{
+  height:38px!important;
+  padding:0 12px!important;
+  border-radius:9px!important;
+}
+.analytics-period-filter .period-help{
+  color:var(--muted)!important;
+  font-size:12px!important;
+  width:100%!important;
+}
+
 </style>
 </head>
 <body>
@@ -3011,6 +3196,11 @@ body.fb-auth-ok #authScreen{display:none!important;}
           <input type="checkbox" id="showCombatOnly" onchange="renderLog()">
           <span>Лише бойові події</span>
         </label>
+
+        <label class="toggle-line">
+          <input type="checkbox" id="showPackagesOnly" onchange="renderLog()">
+          <span>Лише посилки</span>
+        </label>
       </div>
     </div>
 
@@ -3149,7 +3339,150 @@ body.fb-auth-ok #authScreen{display:none!important;}
     <div class="modal-body" id="analyticsBody"></div>
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
+/* ===== V139 ANALYTICS PERIOD CALENDAR FILTER ===== */
+window.analyticsPeriodFrom = window.analyticsPeriodFrom || "";
+window.analyticsPeriodTo = window.analyticsPeriodTo || "";
+
+function parseAnyDateForAnalytics(value){
+  if(!value) return null;
+  if(value instanceof Date) return isNaN(value.getTime()) ? null : value;
+
+  const raw = String(value).trim();
+  if(!raw) return null;
+
+  let d = new Date(raw);
+  if(!isNaN(d.getTime())) return d;
+
+  const m = raw.match(/(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})(?:\s+(\d{1,2})[:.](\d{2}))?/);
+  if(m){
+    const yyyy = m[3].length === 2 ? Number("20"+m[3]) : Number(m[3]);
+    d = new Date(yyyy, Number(m[2])-1, Number(m[1]), Number(m[4]||0), Number(m[5]||0), 0);
+    if(!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+
+function getEventDateForAnalytics(e){
+  return parseAnyDateForAnalytics(
+    e?.date || e?.time || e?.ts || e?.createdAt || e?.updatedAt || e?.datetime || e?.timestamp
+  );
+}
+
+function isEventInAnalyticsPeriod(e){
+  const d = getEventDateForAnalytics(e);
+  if(!d) return true;
+
+  if(window.analyticsPeriodFrom){
+    const from = new Date(window.analyticsPeriodFrom + "T00:00:00");
+    if(d < from) return false;
+  }
+
+  if(window.analyticsPeriodTo){
+    const to = new Date(window.analyticsPeriodTo + "T23:59:59");
+    if(d > to) return false;
+  }
+
+  return true;
+}
+
+function filterEventsByAnalyticsPeriod(list){
+  return (Array.isArray(list) ? list : []).filter(isEventInAnalyticsPeriod);
+}
+
+function getAnalyticsPeriodPanelHTML(){
+  return `
+    <div class="analytics-period-filter">
+      <label>Від <input type="date" id="analyticsDateFrom" value="${window.analyticsPeriodFrom || ""}"></label>
+      <label>До <input type="date" id="analyticsDateTo" value="${window.analyticsPeriodTo || ""}"></label>
+      <button class="green" onclick="applyAnalyticsPeriod()">Показати</button>
+      <button class="blue" onclick="resetAnalyticsPeriod()">За весь час</button>
+      <div class="period-help">Фільтр застосовується до аналітики обстрілів та бойових подій за датою події.</div>
+    </div>
+  `;
+}
+
+function applyAnalyticsPeriod(){
+  window.analyticsPeriodFrom = document.getElementById("analyticsDateFrom")?.value || "";
+  window.analyticsPeriodTo = document.getElementById("analyticsDateTo")?.value || "";
+  if(typeof renderAnalytics === "function") renderAnalytics();
+  else if(typeof openAnalytics === "function") openAnalytics();
+}
+
+function resetAnalyticsPeriod(){
+  window.analyticsPeriodFrom = "";
+  window.analyticsPeriodTo = "";
+  if(typeof renderAnalytics === "function") renderAnalytics();
+  else if(typeof openAnalytics === "function") openAnalytics();
+}
+
+function injectAnalyticsPeriodPanel(){
+  const body = document.getElementById("analyticsBody");
+  if(!body) return;
+  const old = body.querySelector(".analytics-period-filter");
+  if(old) old.remove();
+
+  const title = Array.from(body.querySelectorAll("h2,h3,.section-title"))
+    .find(el => /Загальна статистика|статистика/i.test(el.textContent || ""));
+  const holder = document.createElement("div");
+  holder.innerHTML = getAnalyticsPeriodPanelHTML();
+  const panel = holder.firstElementChild;
+
+  if(title && title.parentNode){
+    const after = title.nextSibling;
+    title.parentNode.insertBefore(panel, after);
+  }else{
+    body.insertBefore(panel, body.firstChild);
+  }
+}
+
+function patchAnalyticsTablesByPeriod(){
+  const body = document.getElementById("analyticsBody");
+  if(!body || (!window.analyticsPeriodFrom && !window.analyticsPeriodTo)) return;
+
+  const periodText = `${window.analyticsPeriodFrom || "початок"} — ${window.analyticsPeriodTo || "сьогодні"}`;
+  const note = Array.from(body.querySelectorAll("*")).find(el => /Період:/i.test(el.textContent || ""));
+  if(note){
+    note.textContent = `Період: ${periodText}. Події втрати/відновлення звʼязку в аналітику не включаються.`;
+  }
+}
+
+(function(){
+  const originalRenderAnalytics = window.renderAnalytics;
+  if(typeof originalRenderAnalytics === "function" && !originalRenderAnalytics.__periodPatched){
+    window.renderAnalytics = function(){
+      const originalEvents = window.events;
+      if(Array.isArray(originalEvents)){
+        window.events = filterEventsByAnalyticsPeriod(originalEvents);
+      }
+      try{
+        return originalRenderAnalytics.apply(this, arguments);
+      }finally{
+        window.events = originalEvents;
+        setTimeout(function(){
+          injectAnalyticsPeriodPanel();
+          patchAnalyticsTablesByPeriod();
+        }, 0);
+      }
+    };
+    window.renderAnalytics.__periodPatched = true;
+  }
+
+  const originalOpenAnalytics = window.openAnalytics;
+  if(typeof originalOpenAnalytics === "function" && !originalOpenAnalytics.__periodPatched){
+    window.openAnalytics = function(){
+      const result = originalOpenAnalytics.apply(this, arguments);
+      setTimeout(function(){
+        if(typeof window.renderAnalytics === "function") window.renderAnalytics();
+        else injectAnalyticsPeriodPanel();
+      }, 0);
+      return result;
+    };
+    window.openAnalytics.__periodPatched = true;
+  }
+})();
+
+</script>
 <script>
 const KEY="operational_board_v27_stable";
 const PAGE_SIZE=999;
@@ -3178,10 +3511,118 @@ function save(){
 }
 function esc(t){const d=document.createElement("div");d.textContent=t??"";return d.innerHTML}
 function pos(id){return state.positions.find(p=>p.id===id)}
-function isFire(t){return !["Втрачено зв’язок","Відновлено зв’язок","Знищено позицію","Відновлено позицію","Посилка"].includes(t)}
+function normalizeEventTypeText(v){
+  return String(v || "").trim().toLowerCase();
+}
+
+function isPackageEvent(e){
+  const type = normalizeEventTypeText(e && e.type);
+  const text = normalizeEventTypeText(e && e.text);
+  return type.includes("посил") || text.includes("посилк");
+}
+
+function isPackageType(t){
+  return normalizeEventTypeText(t).includes("посил");
+}
+
+function isFire(t){return !["Втрачено зв’язок","Відновлено зв’язок","Знищено позицію","Відновлено позицію","Посилка"].includes(t) && !isPackageType(t)}
 function countFire(id){return state.events.filter(e=>e.positionId===id&&isFire(e.type)).length}
 function nowTime(){const d=new Date();return String(d.getHours()).padStart(2,"0")+"."+String(d.getMinutes()).padStart(2,"0")}
-function dur(ms){let s=Math.max(0,Math.floor(ms/1000));let h=Math.floor(s/3600);s%=3600;let m=Math.floor(s/60);s%=60;return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")}
+function dayWordUA(n){
+  n=Math.abs(Number(n)||0);
+  const last=n%10;
+  const last2=n%100;
+  if(last===1 && last2!==11)return "день";
+  if(last>=2 && last<=4 && (last2<12 || last2>14))return "дні";
+  return "днів";
+}
+function dur(ms){
+  let s=Math.max(0,Math.floor(ms/1000));
+  const days=Math.floor(s/86400);
+  s%=86400;
+  const h=Math.floor(s/3600);
+  s%=3600;
+  const m=Math.floor(s/60);
+  s%=60;
+  const time=String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+  return days>0 ? (days+" "+dayWordUA(days)+" "+time) : time;
+}
+
+function eventMs(e){
+  const d = e && e.createdAt ? new Date(e.createdAt) : new Date();
+  const ms = d.getTime();
+  return isNaN(ms) ? Date.now() : ms;
+}
+
+function isDestroyedEventType(type){
+  const t = String(type || "").toLowerCase();
+  return t.includes("знищ") && t.includes("пози");
+}
+
+function isRestorePositionEventType(type){
+  const t = String(type || "").toLowerCase();
+  return t.includes("віднов") && t.includes("пози");
+}
+
+function isLostConnectionEventType(type){
+  const t = String(type || "").toLowerCase();
+  return t.includes("втрач") && t.includes("зв");
+}
+
+function isRestoreConnectionEventType(type){
+  const t = String(type || "").toLowerCase();
+  return t.includes("віднов") && t.includes("зв");
+}
+
+function applyStatusEventToPosition(p, type, createdAt){
+  if(!p) return;
+  const startedAt = createdAt ? eventMs({createdAt}) : Date.now();
+
+  if(isLostConnectionEventType(type)){
+    p.online=false;
+    p.destroyed=false;
+    p.offlineSince=startedAt;
+  }
+
+  if(isRestoreConnectionEventType(type)){
+    p.online=true;
+    p.destroyed=false;
+    p.offlineSince=null;
+  }
+
+  if(isDestroyedEventType(type)){
+    p.destroyed=true;
+    p.online=false;
+    p.offlineSince=startedAt;
+  }
+
+  if(isRestorePositionEventType(type)){
+    p.destroyed=false;
+    p.online=true;
+    p.offlineSince=null;
+  }
+}
+
+function rebuildPositionStateFromEvents(positionId, forceReset=false){
+  const p=pos(positionId);
+  if(!p) return;
+
+  const statusEvents=(state.events||[])
+    .filter(e=>e.positionId===positionId)
+    .filter(e=>isLostConnectionEventType(e.type)||isRestoreConnectionEventType(e.type)||isDestroyedEventType(e.type)||isRestorePositionEventType(e.type))
+    .sort((a,b)=>eventMs(a)-eventMs(b));
+
+  if(!statusEvents.length && !forceReset) return;
+
+  p.online=true;
+  p.destroyed=false;
+  p.offlineSince=null;
+
+  statusEvents.forEach(e=>applyStatusEventToPosition(p, e.type, e.createdAt));
+
+  const last=[...(state.events||[])].reverse().find(x=>x.positionId===p.id);
+  p.lastEvent=last?last.text:"—";
+}
 
 function updateFloatingBackdrop(){
   const backdrop=document.getElementById("floatBackdrop");
@@ -4084,29 +4525,7 @@ function importExcelFile(event){
 
           p.lastEvent=text;
 
-          if(type==="Втрачено зв’язок"){
-            p.online=false;
-            p.destroyed=false;
-            p.offlineSince=Date.now();
-          }
-
-          if(type==="Відновлено зв’язок"){
-            p.online=true;
-            p.destroyed=false;
-            p.offlineSince=null;
-          }
-
-          if(type==="Знищено позицію"){
-            p.destroyed=true;
-            p.online=false;
-            p.offlineSince=Date.now();
-          }
-
-          if(type==="Відновлено позицію"){
-            p.destroyed=false;
-            p.online=true;
-            p.offlineSince=null;
-          }
+          applyStatusEventToPosition(p, type, createdAt);
 
           addedEvents++;
         });
@@ -4343,12 +4762,12 @@ function calculateOfflineStats(positionEvents){
   let lostCount=0;
 
   sorted.forEach(e=>{
-    if(e.type==="Втрачено зв’язок"){
+    if(isLostConnectionEventType(e.type) || isDestroyedEventType(e.type)){
       lostCount++;
-      lostAt=new Date(e.createdAt||Date.now()).getTime();
+      lostAt=eventMs(e);
     }
 
-    if(e.type==="Відновлено зв’язок" && lostAt){
+    if((isRestoreConnectionEventType(e.type) || isRestorePositionEventType(e.type)) && lostAt){
       const restoredAt=new Date(e.createdAt||Date.now()).getTime();
       if(restoredAt>=lostAt){
         periods.push(restoredAt-lostAt);
@@ -4373,19 +4792,17 @@ function calculateOfflineStats(positionEvents){
 }
 
 function formatDurationMs(ms){
-  ms=Math.max(0,Number(ms||0));
-  let s=Math.floor(ms/1000);
-  const h=Math.floor(s/3600);
-  s%=3600;
-  const m=Math.floor(s/60);
-  s%=60;
-  return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+  return dur(ms);
 }
 
 function openPositionAnalyticsModal(positionId){
   closeInfoModal();
   const p=pos(positionId);
   if(!p)return;
+
+  // Перед показом аналітики перераховуємо стан позиції з журналу.
+  // Це потрібно для подій, які були додані через форму "Події" або відредаговані пізніше.
+  rebuildPositionStateFromEvents(positionId, true);
 
   const modal=document.getElementById("positionAnalyticsModal");
   const title=document.getElementById("positionAnalyticsTitle");
@@ -4400,7 +4817,7 @@ function openPositionAnalyticsModal(positionId){
   const mortarCount=allEvents.filter(e=>e.type==="Міномет").length;
   const dropCount=allEvents.filter(e=>e.type==="Скид БПЛА").length;
   const assaultCount=allEvents.filter(e=>e.type==="Штурм" || e.type==="ШТУРМ").length;
-  const destroyedCount=allEvents.filter(e=>e.type==="Знищено позицію").length;
+  const destroyedCount=allEvents.filter(e=>isDestroyedEventType(e.type)).length;
   const offline=calculateOfflineStats(allEvents);
 
   const typeCounts={};
@@ -4540,7 +4957,7 @@ function openPositionAnalyticsModal(positionId){
       </tbody>
     </table>
 
-    <div class="section-title">Історія втрати / відновлення зв’язку</div>
+    <div class="section-title">Історія втрати / відновлення зв’язку / знищення</div>
     <table class="position-analytics-table">
       <thead>
         <tr>
@@ -4552,10 +4969,15 @@ function openPositionAnalyticsModal(positionId){
       <tbody>
   `;
 
-  const commEvents=allEvents.filter(e=>e.type==="Втрачено зв’язок" || e.type==="Відновлено зв’язок");
+  const commEvents=allEvents.filter(e=>
+    isLostConnectionEventType(e.type) ||
+    isRestoreConnectionEventType(e.type) ||
+    isDestroyedEventType(e.type) ||
+    isRestorePositionEventType(e.type)
+  );
 
   if(!commEvents.length){
-    html+=`<tr><td colspan="3">Втрат / відновлень зв’язку не зафіксовано.</td></tr>`;
+    html+=`<tr><td colspan="3">Втрат / відновлень зв’язку / знищення не зафіксовано.</td></tr>`;
   }else{
     [...commEvents].sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0)).forEach(e=>{
       html+=`
@@ -4579,6 +5001,7 @@ function openPositionAnalyticsModal(positionId){
 
 function openInfoModal(id){
   const p=pos(id); if(!p)return;
+  rebuildPositionStateFromEvents(id, true);
   infoTitle.textContent=p.name;
   const people=p.personnel||[];
   let html=`
@@ -4620,7 +5043,8 @@ function toggleConn(id){
   p.offlineSince=p.online?null:Date.now();
   const type=p.online?"Відновлено зв’язок":"Втрачено зв’язок";
   const text=nowTime()+" "+type+" "+p.name+(p.online?offline:"")+".";
-  state.events.push({id:uid(),positionId:p.id,positionName:p.name,type,text,createdAt:getEventCreatedAtISO(),approved:false});
+  const createdAt=new Date().toISOString();
+  state.events.push({id:uid(),positionId:p.id,positionName:p.name,type,text,createdAt,approved:false});
   p.lastEvent=text;save();applyFilters();
 }
 function setDestroyed(id,val){
@@ -4646,7 +5070,7 @@ function getDefaultUnit(type){
 
   if(type === "скид бпла" || type === "fpv" || type === "авіаудар каб" || type === "рсзв") return "од.";
 
-  if(type === "посилка") return "none";
+  if(type.includes("посил")) return "none";
 
   return "none";
 }
@@ -4762,7 +5186,7 @@ function buildText(){
     return text;
   }
 
-  if(type==="Посилка"){
+  if(isPackageType(type)){
     let text=timePrefix+"Посилка на позицію "+p.name;
     if(p.coords)text+=" ("+p.coords+")";
     if(p.village)text+=" "+p.village;
@@ -4837,16 +5261,31 @@ function addEvent(){
   if(editEventId){
     const e=state.events.find(x=>x.id===editEventId);
     if(e){
+      const oldPositionId = e.positionId;
+      const wasPackage = isPackageEvent(e);
+      const wasStatus = isLostConnectionEventType(e.type) || isRestoreConnectionEventType(e.type) || isDestroyedEventType(e.type) || isRestorePositionEventType(e.type);
+      const newCreatedAt = getEventCreatedAtISO();
+
       e.positionId=p.id;
       e.positionName=p.name;
       e.type=type;
       e.text=text;
+      e.createdAt=newCreatedAt;
       e.updatedAt=new Date().toISOString();
       e.approved=false;
       e.losses=eventLosses.value.trim();
       e.enemyLosses=getEnemyLossText();
       p.lastEvent=text;
-      if(type==="Посилка") p.lastPackageAt=getEventCreatedAtISO();
+
+      if(wasStatus || isLostConnectionEventType(type) || isRestoreConnectionEventType(type) || isDestroyedEventType(type) || isRestorePositionEventType(type)){
+        rebuildPositionStateFromEvents(oldPositionId, true);
+        if(oldPositionId !== p.id) rebuildPositionStateFromEvents(p.id, true);
+      }
+
+      if(wasPackage || isPackageType(type)){
+        recalcPositionPackageDate(oldPositionId);
+        recalcPositionPackageDate(p.id);
+      }
     }
 
     editEventId=null;
@@ -4860,44 +5299,24 @@ function addEvent(){
     return;
   }
 
+  const createdAt = getEventCreatedAtISO();
+
   state.events.push({
     id:uid(),
     positionId:p.id,
     positionName:p.name,
     type:type,
     text:text,
-    createdAt:getEventCreatedAtISO(),
+    createdAt:createdAt,
     approved:false,
     losses:eventLosses.value.trim(),
     enemyLosses:getEnemyLossText()
   });
 
-  if(type==="Втрачено зв’язок"){
-    p.online=false;
-    p.destroyed=false;
-    p.offlineSince=Date.now();
-  }
+  applyStatusEventToPosition(p, type, createdAt);
 
-  if(type==="Відновлено зв’язок"){
-    p.online=true;
-    p.destroyed=false;
-    p.offlineSince=null;
-  }
-
-  if(type==="Знищено позицію"){
-    p.destroyed=true;
-    p.online=false;
-    p.offlineSince=Date.now();
-  }
-
-  if(type==="Відновлено позицію"){
-    p.destroyed=false;
-    p.online=true;
-    p.offlineSince=null;
-  }
-
-  if(type==="Посилка"){
-    p.lastPackageAt=getEventCreatedAtISO();
+  if(isPackageType(type)){
+    p.lastPackageAt=createdAt;
   }
 
   p.lastEvent=text;
@@ -4911,10 +5330,22 @@ function deleteEvent(id){
   if(!requireRole('operator'))return;
   const e=state.events.find(x=>x.id===id); if(!e)return;
   if(!confirm("Видалити подію?"))return;
+
+  const wasPackage = isPackageEvent(e);
+  const positionId = e.positionId;
+
   state.events=state.events.filter(x=>x.id!==id);
-  const p=pos(e.positionId);
-  if(p){const last=[...state.events].reverse().find(x=>x.positionId===p.id);p.lastEvent=last?last.text:"—"}
-  save();applyFilters();
+
+  const p=pos(positionId);
+  if(p){
+    rebuildPositionStateFromEvents(p.id, true);
+    if(wasPackage) recalcPositionPackageDate(p.id);
+  }
+
+  save();
+  applyFilters();
+  renderLog();
+  if(document.getElementById("packagesModal")?.classList.contains("show")) renderPackagesModal();
 }
 function clearLog(){
   if(!requireRole('admin'))return;if(!confirm("Очистити журнал?"))return;state.events=[];state.positions.forEach(p=>p.lastEvent="—");save();applyFilters()}
@@ -5025,9 +5456,10 @@ function markDestroyed(id){
 
   if(!confirm("Позначити позицію «"+p.name+"» як знищену?"))return;
 
+  const createdAt=new Date().toISOString();
   p.destroyed=true;
   p.online=false;
-  p.offlineSince=Date.now();
+  p.offlineSince=eventMs({createdAt});
 
   const text=nowTime()+" Знищено позицію "+p.name+".";
   p.lastEvent=text;
@@ -5038,7 +5470,7 @@ function markDestroyed(id){
     positionName:p.name,
     type:"Знищено позицію",
     text,
-    createdAt:getEventCreatedAtISO(),
+    createdAt:createdAt,
     approved:false
   });
 
@@ -5055,11 +5487,13 @@ function restorePosition(id){
 
   if(!confirm("Відновити позицію «"+p.name+"» / повернути в роботу?"))return;
 
+  const downtime=p.offlineSince ? (" (час без зв’язку / знищення "+dur(Date.now()-p.offlineSince)+")") : "";
+
   p.destroyed=false;
   p.online=true;
   p.offlineSince=null;
 
-  const text=nowTime()+" Відновлено позицію "+p.name+".";
+  const text=nowTime()+" Відновлено позицію "+p.name+downtime+".";
   p.lastEvent=text;
 
   state.events.push({
@@ -5085,7 +5519,7 @@ function getPeopleCount(p){
 
 function getLastPackageEvent(p){
   const byEvent = (state.events || [])
-    .filter(e => e.positionId === p.id && e.type === "Посилка")
+    .filter(e => e.positionId === p.id && isPackageEvent(e))
     .sort((a,b) => new Date(b.createdAt || b.updatedAt || 0) - new Date(a.createdAt || a.updatedAt || 0))[0];
 
   if(byEvent) return byEvent;
@@ -5339,7 +5773,13 @@ function renderPackagesModal(){
 function formatEventDateUA(value){
   const d = value ? new Date(value) : new Date();
   if(isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("uk-UA");
+  return d.toLocaleString("uk-UA", {
+    day:"2-digit",
+    month:"2-digit",
+    year:"numeric",
+    hour:"2-digit",
+    minute:"2-digit"
+  }).replace(",", "");
 }
 
 function eventTextWithDate(e){
@@ -5413,7 +5853,7 @@ function renderPositions(){
       <td><span class="lamp ${p.online&&!p.destroyed?'online':'offline'}" onclick="toggleConn('${p.id}')"></span>${p.destroyed?'Знищено':(p.online?'На зв’язку':'Немає зв’язку')}${timer}</td>
       <td>${badge}</td>
       <td>${c}</td>
-      <td>${esc(p.lastEvent||"—")}</td>
+      <td>${esc(getLastEventTextForPosition(p))}</td>
       ${managementMode ? `<td>${managementActionsHTML(p)}</td>` : ""}`;
     positionsBody.appendChild(tr);
   });
@@ -5586,6 +6026,56 @@ function getPeriodLabel(){
   return "Період: за весь час";
 }
 
+function makePackageEventFromPosition(p){
+  return {
+    id:uid(),
+    positionId:p.id,
+    positionName:p.name || "",
+    type:"Посилка",
+    text:"Посилка на позицію " + (p.name || "") + ".",
+    createdAt:p.lastPackageAt,
+    approved:false,
+    losses:"",
+    enemyLosses:"",
+    packageBackfill:true
+  };
+}
+
+function recalcPositionPackageDate(positionId){
+  const p = pos(positionId);
+  if(!p) return;
+
+  const lastPackage = (state.events || [])
+    .filter(e => e && e.positionId === positionId && isPackageEvent(e))
+    .sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))[0];
+
+  p.lastPackageAt = lastPackage ? lastPackage.createdAt : null;
+}
+
+function materializePackageBackfillEvents(){
+  let changed = false;
+
+  (state.positions || []).forEach(p=>{
+    if(!p || !p.lastPackageAt) return;
+
+    const hasPackageEvent = (state.events || []).some(e =>
+      e && e.positionId === p.id && isPackageEvent(e)
+    );
+
+    if(hasPackageEvent) return;
+
+    state.events.push(makePackageEventFromPosition(p));
+    changed = true;
+  });
+
+  if(changed) save();
+}
+
+function getJournalEventsWithPackagesBackfill(){
+  materializePackageBackfillEvents();
+  return getEventsForSelectedPeriod();
+}
+
 function renderLog(){
   log.innerHTML="";
 
@@ -5600,6 +6090,9 @@ function renderLog(){
   const showCombatOnly =
     document.getElementById("showCombatOnly")?.checked;
 
+  const showPackagesOnly =
+    document.getElementById("showPackagesOnly")?.checked;
+
   const combatTypes = [
     "FPV",
     "Міномет",
@@ -5612,7 +6105,7 @@ function renderLog(){
     "Стріл. зброя"
   ];
 
-  const eventsForPeriod = getEventsForSelectedPeriod();
+  const eventsForPeriod = getJournalEventsWithPackagesBackfill();
 
   const ordered=[...eventsForPeriod].sort((a,b)=>{
     if((a.approved?1:0)!==(b.approved?1:0)){
@@ -5632,7 +6125,11 @@ function renderLog(){
       return false;
     }
 
-    if(showCombatOnly && !combatTypes.includes(e.type)){
+    if(showPackagesOnly && !isPackageEvent(e)){
+      return false;
+    }
+
+    if(showCombatOnly && !showPackagesOnly && !combatTypes.includes(e.type)){
       return false;
     }
 
@@ -5652,12 +6149,15 @@ function renderLog(){
       ? '<span class="log-badge approved">ПІДТВ.</span>'
       : '<span class="log-badge pending">НЕ ПІДТВ.</span>';
 
-    div.innerHTML=`
+    const actionsHtml = `
       <div class="log-actions">
         <button class="log-edit" onclick="editEvent('${e.id}')" title="Редагувати">✎</button>
         <button class="log-approve" onclick="approveEvent('${e.id}')" title="Затвердити">✓</button>
         <button class="log-del" onclick="deleteEvent('${e.id}')" title="Видалити">×</button>
-      </div>
+      </div>`;
+
+    div.innerHTML=`
+      ${actionsHtml}
 
       <div class="logtime">
         ${new Date(e.createdAt).toLocaleString("uk-UA")} • ${esc(e.positionName)} • ${esc(e.type)} ${badge}
@@ -5736,10 +6236,59 @@ function analyticsSummaryText(p){
   return parts.join("; ");
 }
 
+
+function getAnalyticsPeriod(){
+  const from = document.getElementById("analyticsDateFrom")?.value || window.analyticsPeriodFrom || "";
+  const to = document.getElementById("analyticsDateTo")?.value || window.analyticsPeriodTo || "";
+
+  let fromDate = null;
+  let toDate = null;
+
+  if(from) fromDate = new Date(from + "T00:00:00");
+  if(to) toDate = new Date(to + "T23:59:59");
+
+  return {from, to, fromDate, toDate};
+}
+
+function isEventInAnalyticsDatePeriod(e){
+  const {fromDate, toDate} = getAnalyticsPeriod();
+  const d = new Date(e.createdAt || e.date || e.time || e.ts || 0);
+
+  if(fromDate && d < fromDate) return false;
+  if(toDate && d > toDate) return false;
+
+  return true;
+}
+
+function getAnalyticsEventsForSelectedPeriod(){
+  return (state.events || [])
+    .filter(e => !isConnectionEventForAnalytics(e))
+    .filter(isEventInAnalyticsDatePeriod);
+}
+
+function getAnalyticsPeriodLabel(){
+  const {from, to} = getAnalyticsPeriod();
+
+  if(!from && !to) return "Період: за весь час";
+  if(from && to) return "Період: з " + from.split("-").reverse().join(".") + " по " + to.split("-").reverse().join(".");
+  if(from) return "Період: з " + from.split("-").reverse().join(".");
+  return "Період: до " + to.split("-").reverse().join(".");
+}
+
+function setAnalyticsPeriodAndRender(){
+  window.analyticsPeriodFrom = document.getElementById("analyticsDateFrom")?.value || "";
+  window.analyticsPeriodTo = document.getElementById("analyticsDateTo")?.value || "";
+  renderAnalytics();
+}
+
+function clearAnalyticsPeriodAndRender(){
+  window.analyticsPeriodFrom = "";
+  window.analyticsPeriodTo = "";
+  renderAnalytics();
+}
+
 function getAnalyticsData(){
-  const events = getEventsForSelectedPeriod
-    ? getEventsForSelectedPeriod({excludeConnection:true})
-    : (state.events || []).filter(e=>!isConnectionEventForAnalytics(e));
+  const events = getAnalyticsEventsForSelectedPeriod();
 
   const positions = state.positions || [];
 
@@ -5793,7 +6342,7 @@ function getAnalyticsData(){
     if(type==="Танк") stats.tank++;
     if(type==="Стріл. зброя") stats.rifle++;
     if(type==="Штурм" || type==="ШТУРМ") stats.assault++;
-    if(type==="Знищено позицію") stats.destroyed++;
+    if(isDestroyedEventType(type)) stats.destroyed++;
     if(analyticsIsCombat(type)) stats.combat++;
 
     if(!byPosition[e.positionId]){
@@ -5831,7 +6380,7 @@ function getAnalyticsData(){
     if(type==="Танк") p.tank++;
     if(type==="Стріл. зброя") p.rifle++;
     if(type==="Штурм" || type==="ШТУРМ") p.assault++;
-    if(type==="Знищено позицію") p.destroyed++;
+    if(isDestroyedEventType(type)) p.destroyed++;
     if(analyticsIsCombat(type)) p.combat++;
   });
 
@@ -7901,7 +8450,16 @@ function renderAnalytics(){
 
   let html=`
     <div class="section-title">Загальна статистика</div>
-    <div class="meta" style="margin-bottom:8px">${getPeriodLabel ? getPeriodLabel() : "Період: за весь час"}. Події втрати/відновлення зв’язку в аналітику не включаються.</div>
+
+    <div class="analytics-period-filter">
+      <label>Від <input type="date" id="analyticsDateFrom" value="${window.analyticsPeriodFrom || ""}"></label>
+      <label>До <input type="date" id="analyticsDateTo" value="${window.analyticsPeriodTo || ""}"></label>
+      <button class="green" onclick="setAnalyticsPeriodAndRender()">Показати</button>
+      <button class="blue" onclick="clearAnalyticsPeriodAndRender()">За весь час</button>
+      <div class="period-help">Вибери період для підрахунку обстрілів та бойових подій.</div>
+    </div>
+
+    <div class="meta" style="margin-bottom:8px">${getAnalyticsPeriodLabel()}. Події втрати/відновлення зв’язку в аналітику не включаються.</div>
 
     <div class="analytics-grid">
       <div class="analytics-card"><b>${totalPositions}</b><span>Усього позицій</span></div>
@@ -8134,7 +8692,10 @@ function exportOperationalBoardXLSX(){
   XLSX.writeFile(wb, "Експорт_оперативної_дошки_"+stamp+".xlsx");
 }
 
-function renderAll(){renderStats();renderSelect();renderPositions();renderLog();updatePreview()}
+function normalizeAllPositionStatusFromEvents(){
+  (state.positions||[]).forEach(p=>rebuildPositionStateFromEvents(p.id));
+}
+function renderAll(){normalizeAllPositionStatusFromEvents();renderStats();renderSelect();renderPositions();renderLog();updatePreview()}
 setInterval(()=>{document.querySelectorAll("[data-timer]").forEach(el=>{const p=pos(el.dataset.timer);if(p&&!p.online&&p.offlineSince)el.textContent=dur(Date.now()-p.offlineSince)})},1000);
 applyFilters();
 </script>
@@ -8767,3 +9328,5 @@ console.log("Firebase Auth + Roles initialized");
 
 </body>
 </html>
+
+<!-- v137 full datetime patch generated -->
