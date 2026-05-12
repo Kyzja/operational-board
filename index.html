@@ -2992,6 +2992,134 @@ tbody td:nth-child(6){
   width:100%!important;
 }
 
+
+/* ===== V143 WORKING AUDIT CONTROL ===== */
+#auditBtn{pointer-events:auto!important;cursor:pointer!important;}
+#auditModal.show{display:flex!important;z-index:98000!important;}
+#auditModal .modal{
+  z-index:98001!important;
+  width:min(1250px,95vw)!important;
+  max-height:90vh!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+#auditModal .modal-body{overflow:auto!important;}
+.audit-toolbar{
+  display:flex!important;
+  gap:10px!important;
+  align-items:center!important;
+  flex-wrap:wrap!important;
+  margin-bottom:12px!important;
+  padding:12px!important;
+  border:1px solid var(--line)!important;
+  border-radius:12px!important;
+  background:rgba(10,25,37,.65)!important;
+}
+.audit-toolbar label{
+  display:flex!important;
+  align-items:center!important;
+  gap:6px!important;
+  font-weight:900!important;
+  color:#d7e7ff!important;
+}
+.audit-toolbar input,.audit-toolbar select{
+  width:auto!important;
+  min-width:150px!important;
+  height:38px!important;
+}
+.audit-table{width:100%!important;border-collapse:collapse!important;table-layout:fixed!important;}
+.audit-table th,.audit-table td{
+  border:1px solid var(--line)!important;
+  padding:9px!important;
+  font-size:13px!important;
+  line-height:1.35!important;
+  vertical-align:top!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+}
+.audit-table th{background:#20384c!important;}
+.audit-table th:nth-child(1),.audit-table td:nth-child(1){width:155px!important;}
+.audit-table th:nth-child(2),.audit-table td:nth-child(2){width:170px!important;}
+.audit-table th:nth-child(3),.audit-table td:nth-child(3){width:170px!important;}
+.audit-table th:nth-child(4),.audit-table td:nth-child(4){width:170px!important;}
+.audit-empty,.audit-muted{color:var(--muted)!important;font-size:12px!important;padding:8px 0!important;}
+
+
+/* ===== V146 AUDIT UI IMPROVE ===== */
+#auditModal .modal{
+  background:linear-gradient(180deg,#13293b 0%, #0b1f30 100%)!important;
+  border:1px solid #2c5877!important;
+  border-radius:18px!important;
+  box-shadow:0 20px 60px rgba(0,0,0,.55)!important;
+}
+.audit-table{
+  table-layout:auto!important;
+}
+.audit-table th{
+  position:sticky!important;
+  top:0!important;
+  z-index:2!important;
+  background:#23445d!important;
+  color:#fff!important;
+  font-size:12px!important;
+}
+.audit-table td{
+  background:rgba(9,24,37,.92)!important;
+  color:#dfefff!important;
+  font-size:13px!important;
+  min-width:120px!important;
+}
+.audit-table tr:nth-child(even) td{
+  background:rgba(14,33,49,.96)!important;
+}
+.audit-table td:nth-child(1){
+  white-space:nowrap!important;
+  min-width:165px!important;
+  font-weight:700!important;
+}
+.audit-table td:nth-child(2){
+  min-width:190px!important;
+  color:#ffd76a!important;
+  font-weight:700!important;
+}
+.audit-table td:nth-child(3){
+  min-width:210px!important;
+  color:#8fe3ff!important;
+  font-weight:700!important;
+}
+.audit-table td:nth-child(4){
+  min-width:180px!important;
+  font-weight:700!important;
+}
+.audit-table td:nth-child(5){
+  min-width:360px!important;
+  max-width:620px!important;
+  line-height:1.45!important;
+}
+.audit-toolbar{
+  position:sticky!important;
+  top:0!important;
+  z-index:5!important;
+  backdrop-filter:blur(8px)!important;
+}
+
+
+/* ===== V147 AUDIT POSITION FILTER ===== */
+#auditPositionFilter{
+  min-width:190px!important;
+  max-width:240px!important;
+}
+.audit-toolbar{
+  gap:9px!important;
+}
+@media(max-width:900px){
+  #auditPositionFilter{
+    width:100%!important;
+    max-width:none!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -3217,6 +3345,7 @@ tbody td:nth-child(6){
     <button type="button" class="blue side-btn icon-book" onclick="toggleDrawer('logPanel')">Журнал</button>
     <button type="button" class="blue side-btn icon-chart" onclick="openAnalyticsModal()">Аналітика</button>
     <button type="button" id="packagesBtn" class="blue side-btn icon-import" onclick="openPackagesModal()">Посилки</button>
+    <button type="button" id="auditBtn" class="blue side-btn icon-shield" onclick="openAuditModal()">Контроль змін</button>
     <button type="button" class="blue side-btn icon-shield" onclick="openAdminModal()" data-role="admin">Адміністрування</button>
   </aside>
   </div>
@@ -9325,6 +9454,928 @@ console.log("Firebase Auth + Roles initialized");
     </div>
   </div>
 </div>
+
+
+<div class="modal-backdrop" id="auditModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Контроль змін</div>
+      <button class="red small" type="button" onclick="closeAuditModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="audit-toolbar">
+        <label>Від <input type="date" id="auditFrom"></label>
+        <label>До <input type="date" id="auditTo"></label>
+        <select id="auditUserFilter"><option value="">Всі користувачі</option></select>
+        <select id="auditPositionFilter"><option value="">Всі позиції</option></select>
+        <input id="auditSearch" placeholder="Пошук">
+        <button class="green" type="button" onclick="renderAuditLog()">Показати</button>
+        <button class="blue" type="button" onclick="clearAuditFilters()">За весь час</button>
+        <button class="blue" type="button" onclick="exportAuditCSV()">Експорт CSV</button>
+      </div>
+      <div class="audit-muted">Тут видно хто, коли і що змінював. Старі зміни до встановлення цієї версії можуть не відображатися.</div>
+      <div id="auditBody" style="margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== V143 WORKING AUDIT CONTROL ===== */
+(function(){
+  function auditEsc(v){
+    return String(v ?? "").replace(/[&<>"']/g, function(s){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[s];
+    });
+  }
+
+  function auditState(){
+    window.state = window.state || {};
+    if(!Array.isArray(window.state.auditLog)) window.state.auditLog = [];
+    return window.state;
+  }
+
+  function auditUser(){
+    try{
+      var u = window.currentUser || window.authUser || {};
+      var badge = document.querySelector(".user-badge");
+      return u.displayName || u.email || (badge ? badge.textContent.trim() : "") || "Невідомий користувач";
+    }catch(e){
+      return "Невідомий користувач";
+    }
+  }
+
+  window.addAudit = function(action, details, target){
+    try{
+      var st = auditState();
+      st.auditLog.unshift({
+        id: Date.now() + "_" + Math.random().toString(36).slice(2),
+        at: new Date().toISOString(),
+        user: auditUser(),
+        action: action || "Зміна",
+        target: target || "",
+        details: details || ""
+      });
+      st.auditLog = st.auditLog.slice(0, 3000);
+      if(typeof saveState === "function") saveState();
+    }catch(e){
+      console.warn("audit save error", e);
+    }
+  };
+
+  function fmtDate(iso){
+    var d = new Date(iso);
+    if(isNaN(d.getTime())) return iso || "";
+    return d.toLocaleString("uk-UA", {
+      day:"2-digit", month:"2-digit", year:"numeric",
+      hour:"2-digit", minute:"2-digit", second:"2-digit"
+    }).replace(",", "");
+  }
+
+  function getRows(){
+    var st = auditState();
+    var from = (document.getElementById("auditFrom") || {}).value || "";
+    var to = (document.getElementById("auditTo") || {}).value || "";
+    var user = (document.getElementById("auditUserFilter") || {}).value || "";
+    var q = ((document.getElementById("auditSearch") || {}).value || "").toLowerCase();
+
+    return st.auditLog.filter(function(r){
+      var d = new Date(r.at);
+      if(from && d < new Date(from + "T00:00:00")) return false;
+      if(to && d > new Date(to + "T23:59:59")) return false;
+      if(user && r.user !== user) return false;
+      if(q){
+        var hay = ((r.user||"") + " " + (r.action||"") + " " + (r.target||"") + " " + (r.details||"")).toLowerCase();
+        if(hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+  }
+
+  window.renderAuditLog = function(){
+    var st = auditState();
+    var sel = document.getElementById("auditUserFilter");
+    if(sel){
+      var cur = sel.value;
+      var users = Array.from(new Set(st.auditLog.map(function(r){return r.user;}).filter(Boolean))).sort();
+      sel.innerHTML = '<option value="">Всі користувачі</option>' + users.map(function(u){
+        return '<option value="' + auditEsc(u) + '">' + auditEsc(u) + '</option>';
+      }).join("");
+      sel.value = cur;
+    }
+
+    var body = document.getElementById("auditBody");
+    if(!body) return;
+
+    var rows = getRows();
+    if(!rows.length){
+      body.innerHTML = '<div class="audit-empty">Поки записів немає. Нові зміни почнуть записуватись з цієї версії.</div>';
+      return;
+    }
+
+    body.innerHTML = '<table class="audit-table"><thead><tr>' +
+      '<th>Дата / час</th><th>Користувач</th><th>Дія</th><th>Обʼєкт</th><th>Деталі</th>' +
+      '</tr></thead><tbody>' + rows.map(function(r){
+        return '<tr><td>' + auditEsc(fmtDate(r.at)) + '</td><td>' + auditEsc(r.user) + '</td><td>' +
+          auditEsc(r.action) + '</td><td>' + auditEsc(r.target) + '</td><td>' + auditEsc(r.details) + '</td></tr>';
+      }).join("") + '</tbody></table>';
+  };
+
+  window.openAuditModal = function(){
+    var modal = document.getElementById("auditModal");
+    if(!modal){
+      alert("Модальне вікно контролю змін не знайдено.");
+      return;
+    }
+    modal.classList.add("show");
+    document.body.classList.add("modal-open");
+    renderAuditLog();
+  };
+
+  window.closeAuditModal = function(){
+    var modal = document.getElementById("auditModal");
+    if(modal) modal.classList.remove("show");
+    document.body.classList.remove("modal-open");
+  };
+
+  window.clearAuditFilters = function(){
+    ["auditFrom","auditTo","auditSearch"].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.value = "";
+    });
+    var u = document.getElementById("auditUserFilter");
+    if(u) u.value = "";
+    renderAuditLog();
+  };
+
+  window.exportAuditCSV = function(){
+    var rows = getRows();
+    function cell(v){ return '"' + String(v ?? "").replaceAll('"','""') + '"'; }
+    var csv = [["Дата/час","Користувач","Дія","Обʼєкт","Деталі"].map(cell).join(";")]
+      .concat(rows.map(function(r){ return [fmtDate(r.at), r.user, r.action, r.target, r.details].map(cell).join(";"); }))
+      .join("\n");
+    var blob = new Blob(["\ufeff" + csv], {type:"text/csv;charset=utf-8"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "control_changes_audit.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  function patchAction(name, label, target){
+    var fn = window[name];
+    if(typeof fn !== "function" || fn.__auditPatchedV143) return;
+    window[name] = function(){
+      var args = Array.from(arguments).map(function(a){
+        try{ return typeof a === "object" ? JSON.stringify(a).slice(0,200) : String(a); }
+        catch(e){ return String(a); }
+      }).join(", ");
+      var result = fn.apply(this, arguments);
+      setTimeout(function(){ addAudit(label, args || "—", target); }, 0);
+      return result;
+    };
+    window[name].__auditPatchedV143 = true;
+  }
+
+  function patchAllAuditActions(){
+    patchAction("addEvent", "Створено подію", "Журнал подій");
+    patchAction("editLog", "Редаговано запис", "Журнал подій");
+    patchAction("deleteLog", "Видалено запис", "Журнал подій");
+    patchAction("approveLog", "Підтверджено запис", "Журнал подій");
+    patchAction("saveCard", "Змінено позицію", "Позиція");
+    patchAction("deletePosition", "Видалено позицію", "Позиція");
+    patchAction("toggleConnection", "Змінено звʼязок", "Позиція");
+    patchAction("setDestroyed", "Змінено статус: знищено", "Позиція");
+    patchAction("savePackage", "Змінено посилку", "Посилки");
+    patchAction("deletePackage", "Видалено посилку", "Посилки");
+    patchAction("renderPackagesModal", "Перегляд посилок", "Посилки");
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    patchAllAuditActions();
+    var btn = document.getElementById("auditBtn");
+    if(btn){
+      btn.onclick = function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        openAuditModal();
+        return false;
+      };
+    }
+  });
+
+  setTimeout(function(){
+    patchAllAuditActions();
+    var btn = document.getElementById("auditBtn");
+    if(btn){
+      btn.onclick = function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        openAuditModal();
+        return false;
+      };
+    }
+  }, 1000);
+})();
+</script>
+
+
+<script>
+/* ===== V144 CREATION LOGGING ===== */
+(function(){
+  function safeAudit(action, details, target){
+    try{
+      if(typeof addAudit === "function"){
+        addAudit(action, details, target);
+      }
+    }catch(e){}
+  }
+
+  function patchCreate(fnName, actionName, targetName){
+    const fn = window[fnName];
+    if(typeof fn !== "function" || fn.__v144patched) return;
+
+    window[fnName] = function(){
+      let info = "";
+      try{
+        info = Array.from(arguments).map(a=>{
+          if(typeof a === "object") return JSON.stringify(a).slice(0,300);
+          return String(a);
+        }).join(" | ");
+      }catch(e){}
+
+      const result = fn.apply(this, arguments);
+
+      setTimeout(()=>{
+        safeAudit(actionName, info || "Створено новий запис", targetName);
+        if(typeof renderAuditLog === "function"){
+          renderAuditLog();
+        }
+      }, 50);
+
+      return result;
+    };
+
+    window[fnName].__v144patched = true;
+  }
+
+  function patchAllCreates(){
+    patchCreate("createCard", "Створено позицію", "Позиція");
+    patchCreate("saveCard", "Створено/оновлено позицію", "Позиція");
+    patchCreate("addEvent", "Створено подію", "Журнал подій");
+    patchCreate("createEvent", "Створено подію", "Журнал подій");
+    patchCreate("savePackage", "Створено/оновлено посилку", "Посилки");
+    patchCreate("createPackage", "Створено посилку", "Посилки");
+  }
+
+  document.addEventListener("DOMContentLoaded", patchAllCreates);
+  setTimeout(patchAllCreates, 1000);
+
+  // Додати стартовий запис після відкриття нової версії
+  setTimeout(function(){
+    try{
+      if(!localStorage.getItem("v144_audit_initialized")){
+        safeAudit(
+          "Ініціалізація контролю",
+          "Увімкнено журнал створення, редагування та видалення записів",
+          "Система"
+        );
+        localStorage.setItem("v144_audit_initialized", "1");
+      }
+    }catch(e){}
+  }, 1500);
+
+})();
+</script>
+
+
+<script>
+/* ===== V145 AUDIT: SHOW EXISTING HISTORY + FULL PERIOD BUTTON ===== */
+(function(){
+  function escAudit(v){
+    return String(v ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[s]));
+  }
+
+  function st(){
+    window.state = window.state || {};
+    if(!Array.isArray(state.auditLog)) state.auditLog = [];
+    return state;
+  }
+
+  function asDate(v){
+    if(!v) return null;
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function isoFromAny(obj){
+    const d = asDate(obj?.at || obj?.createdAt || obj?.updatedAt || obj?.date || obj?.time || obj?.ts || obj?.timestamp);
+    return d ? d.toISOString() : new Date().toISOString();
+  }
+
+  function currentUserName(){
+    try{
+      const u = window.currentUser || window.authUser || {};
+      const badge = document.querySelector(".user-badge")?.textContent?.trim();
+      return u.displayName || u.email || badge || "невідомо / старий запис";
+    }catch(e){
+      return "невідомо / старий запис";
+    }
+  }
+
+  window.addAudit = function(action, details, target){
+    const s = st();
+    s.auditLog.unshift({
+      id: Date.now() + "_" + Math.random().toString(36).slice(2),
+      at: new Date().toISOString(),
+      user: currentUserName(),
+      action: action || "Дія",
+      target: target || "",
+      details: details || ""
+    });
+    s.auditLog = s.auditLog.slice(0, 5000);
+    try{ if(typeof saveState === "function") saveState(); }catch(e){}
+  };
+
+  function seedAuditFromExistingData(){
+    const s = st();
+
+    // Створюємо службові записи з існуючих даних, щоб контроль не був порожній.
+    // Позначаємо id, щоб не дублювати.
+    const existingIds = new Set(s.auditLog.map(r => r.id));
+
+    function addSeed(id, at, user, action, target, details){
+      if(existingIds.has(id)) return;
+      s.auditLog.push({
+        id,
+        at,
+        user: user || "невідомо / старий запис",
+        action,
+        target,
+        details
+      });
+      existingIds.add(id);
+    }
+
+    (s.positions || []).forEach((p, i)=>{
+      const pid = p.id || p.name || i;
+      addSeed(
+        "seed_position_" + pid,
+        isoFromAny(p),
+        p.createdBy || p.updatedBy || "невідомо / старий запис",
+        "Створено позицію",
+        p.name || "Позиція",
+        [p.type, p.coords || p.coord, p.locality || p.place].filter(Boolean).join(" / ")
+      );
+    });
+
+    (s.events || []).forEach((e, i)=>{
+      const eid = e.id || i;
+      addSeed(
+        "seed_event_" + eid,
+        isoFromAny(e),
+        e.createdBy || e.user || e.author || "невідомо / старий запис",
+        e.approved ? "Створено та підтверджено подію" : "Створено подію",
+        e.positionName || e.position || e.pos || "Журнал подій",
+        e.text || e.message || e.description || e.type || "Подія"
+      );
+    });
+
+    (s.packages || []).forEach((p, i)=>{
+      const pid = p.id || i;
+      addSeed(
+        "seed_package_" + pid,
+        isoFromAny(p),
+        p.createdBy || p.user || "невідомо / старий запис",
+        "Створено посилку",
+        p.positionName || p.position || p.name || "Посилки",
+        [p.title, p.text, p.status, p.note].filter(Boolean).join(" / ")
+      );
+    });
+
+    s.auditLog.sort((a,b)=>new Date(b.at)-new Date(a.at));
+    try{ if(typeof saveState === "function") saveState(); }catch(e){}
+  }
+
+  function fmtDate(iso){
+    const d = new Date(iso);
+    if(isNaN(d.getTime())) return iso || "";
+    return d.toLocaleString("uk-UA", {
+      day:"2-digit", month:"2-digit", year:"numeric",
+      hour:"2-digit", minute:"2-digit", second:"2-digit"
+    }).replace(",", "");
+  }
+
+  function dateInputValue(d){
+    const z = n => String(n).padStart(2,"0");
+    return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
+  }
+
+  function setAuditFullPeriod(){
+    seedAuditFromExistingData();
+    const rows = st().auditLog;
+    const dates = rows.map(r=>new Date(r.at)).filter(d=>!isNaN(d.getTime()));
+    const fromEl = document.getElementById("auditFrom");
+    const toEl = document.getElementById("auditTo");
+
+    if(dates.length && fromEl){
+      const min = new Date(Math.min(...dates.map(d=>d.getTime())));
+      fromEl.value = dateInputValue(min);
+    }
+
+    if(toEl){
+      toEl.value = dateInputValue(new Date());
+    }
+
+    renderAuditLog();
+  }
+
+  function getFilteredRows(){
+    seedAuditFromExistingData();
+
+    const from = document.getElementById("auditFrom")?.value || "";
+    const to = document.getElementById("auditTo")?.value || "";
+    const user = document.getElementById("auditUserFilter")?.value || "";
+    const q = (document.getElementById("auditSearch")?.value || "").toLowerCase();
+
+    return st().auditLog.filter(r=>{
+      const d = new Date(r.at);
+      if(from && d < new Date(from + "T00:00:00")) return false;
+      if(to && d > new Date(to + "T23:59:59")) return false;
+      if(user && r.user !== user) return false;
+      if(q){
+        const hay = `${r.user} ${r.action} ${r.target} ${r.details}`.toLowerCase();
+        if(!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  window.renderAuditLog = function(){
+    const rows = getFilteredRows();
+
+    const sel = document.getElementById("auditUserFilter");
+    if(sel){
+      const current = sel.value;
+      const users = [...new Set(st().auditLog.map(r=>r.user).filter(Boolean))].sort();
+      sel.innerHTML = '<option value="">Всі користувачі</option>' + users.map(u=>`<option value="${escAudit(u)}">${escAudit(u)}</option>`).join("");
+      sel.value = current;
+    }
+
+    const body = document.getElementById("auditBody");
+    if(!body) return;
+
+    if(!rows.length){
+      body.innerHTML = '<div class="audit-empty">За вибраний період записів немає.</div>';
+      return;
+    }
+
+    body.innerHTML = `
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>Дата / час</th>
+            <th>Користувач</th>
+            <th>Дія</th>
+            <th>Обʼєкт</th>
+            <th>Деталі</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r=>`
+            <tr>
+              <td>${escAudit(fmtDate(r.at))}</td>
+              <td>${escAudit(r.user || "—")}</td>
+              <td>${escAudit(r.action || "—")}</td>
+              <td>${escAudit(r.target || "—")}</td>
+              <td>${escAudit(r.details || "—")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>`;
+  };
+
+  window.clearAuditFilters = setAuditFullPeriod;
+
+  window.openAuditModal = function(){
+    const modal = document.getElementById("auditModal");
+    if(!modal){
+      alert("Вікно контролю змін не знайдено.");
+      return;
+    }
+    modal.classList.add("show");
+    document.body.classList.add("modal-open");
+
+    // При відкритті одразу ставимо повний доступний період: найперша дата — сьогодні.
+    setAuditFullPeriod();
+  };
+
+  window.closeAuditModal = function(){
+    document.getElementById("auditModal")?.classList.remove("show");
+    document.body.classList.remove("modal-open");
+  };
+
+  window.exportAuditCSV = function(){
+    const rows = getFilteredRows();
+    const cell = v => '"' + String(v ?? "").replaceAll('"','""') + '"';
+    const csv = [
+      ["Дата/час","Користувач","Дія","Обʼєкт","Деталі"].map(cell).join(";"),
+      ...rows.map(r=>[fmtDate(r.at), r.user, r.action, r.target, r.details].map(cell).join(";"))
+    ].join("\n");
+
+    const blob = new Blob(["\ufeff"+csv], {type:"text/csv;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "control_changes_audit.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  function patchAction(name, label, target){
+    const fn = window[name];
+    if(typeof fn !== "function" || fn.__auditV145) return;
+
+    window[name] = function(){
+      const args = Array.from(arguments).map(a=>{
+        try{ return typeof a === "object" ? JSON.stringify(a).slice(0,300) : String(a); }
+        catch(e){ return String(a); }
+      }).join(" | ");
+
+      const result = fn.apply(this, arguments);
+
+      setTimeout(()=>{
+        addAudit(label, args || "—", target);
+        if(document.getElementById("auditModal")?.classList.contains("show")) renderAuditLog();
+      }, 80);
+
+      return result;
+    };
+
+    window[name].__auditV145 = true;
+  }
+
+  function patchAll(){
+    patchAction("addEvent", "Створено подію", "Журнал подій");
+    patchAction("createEvent", "Створено подію", "Журнал подій");
+    patchAction("editLog", "Редаговано подію", "Журнал подій");
+    patchAction("deleteLog", "Видалено подію", "Журнал подій");
+    patchAction("approveLog", "Підтверджено подію", "Журнал подій");
+
+    patchAction("createCard", "Створено позицію", "Позиція");
+    patchAction("openCreateModal", "Відкрито створення позиції", "Позиція");
+    patchAction("saveCard", "Створено/оновлено позицію", "Позиція");
+    patchAction("deletePosition", "Видалено позицію", "Позиція");
+    patchAction("toggleConnection", "Змінено звʼязок", "Позиція");
+    patchAction("setDestroyed", "Змінено статус: знищено", "Позиція");
+
+    patchAction("savePackage", "Створено/оновлено посилку", "Посилки");
+    patchAction("createPackage", "Створено посилку", "Посилки");
+    patchAction("deletePackage", "Видалено посилку", "Посилки");
+  }
+
+  document.addEventListener("DOMContentLoaded", ()=>{
+    patchAll();
+
+    const btn = document.getElementById("auditBtn");
+    if(btn){
+      btn.onclick = e => {
+        e.preventDefault();
+        e.stopPropagation();
+        openAuditModal();
+        return false;
+      };
+    }
+
+    const clearBtn = [...document.querySelectorAll("#auditModal button")].find(b => /За весь час/i.test(b.textContent || ""));
+    if(clearBtn){
+      clearBtn.onclick = e => {
+        e.preventDefault();
+        setAuditFullPeriod();
+        return false;
+      };
+    }
+  });
+
+  setTimeout(patchAll, 1000);
+})();
+</script>
+
+
+<script>
+/* ===== V146 AUDIT USER RESOLUTION ===== */
+(function(){
+
+  function resolveUser(obj){
+    if(!obj) return "невідомо";
+
+    return obj.createdByName ||
+           obj.createdBy ||
+           obj.author ||
+           obj.user ||
+           obj.username ||
+           obj.owner ||
+           obj.updatedBy ||
+           obj.editor ||
+           (obj.createdByUser && (obj.createdByUser.name || obj.createdByUser.email)) ||
+           (obj.userObj && (obj.userObj.name || obj.userObj.email)) ||
+           localStorage.getItem("lastAuditKnownUser") ||
+           "невідомо";
+  }
+
+  function rememberUser(name){
+    try{
+      if(name && name !== "невідомо"){
+        localStorage.setItem("lastAuditKnownUser", name);
+      }
+    }catch(e){}
+  }
+
+  const originalAddAudit = window.addAudit;
+  if(typeof originalAddAudit === "function" && !originalAddAudit.__v146patched){
+    window.addAudit = function(action, details, target){
+      try{
+        const current =
+          (window.currentUser && (window.currentUser.displayName || window.currentUser.email)) ||
+          document.querySelector(".user-badge")?.textContent?.trim();
+
+        if(current) rememberUser(current);
+      }catch(e){}
+
+      return originalAddAudit.apply(this, arguments);
+    };
+    window.addAudit.__v146patched = true;
+  }
+
+  function rebuildSeedUsers(){
+    if(!window.state || !Array.isArray(state.auditLog)) return;
+
+    state.auditLog.forEach(r=>{
+      if(
+        !r.user ||
+        r.user === "невідомо / старий запис" ||
+        r.user === "невідомо"
+      ){
+        const found =
+          resolveUser(r) ||
+          resolveUser({createdBy:r.details});
+
+        r.user = found || "невідомо";
+      }
+    });
+
+    try{
+      if(typeof saveState === "function") saveState();
+    }catch(e){}
+  }
+
+  function enrichFromState(){
+    if(!window.state) return;
+
+    const map = new Map();
+
+    (state.positions || []).forEach(p=>{
+      map.set(p.name || p.id, resolveUser(p));
+    });
+
+    (state.packages || []).forEach(p=>{
+      map.set(p.name || p.id, resolveUser(p));
+    });
+
+    (state.events || []).forEach(e=>{
+      const k = e.positionName || e.position || e.pos || e.name || e.id;
+      if(k) map.set(k, resolveUser(e));
+    });
+
+    (state.auditLog || []).forEach(r=>{
+      if(r.user && !String(r.user).includes("невідомо")) return;
+
+      const key = r.target;
+      if(map.has(key)){
+        r.user = map.get(key);
+      }
+    });
+
+    try{
+      if(typeof saveState === "function") saveState();
+    }catch(e){}
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    rebuildSeedUsers();
+    enrichFromState();
+
+    if(typeof renderAuditLog === "function"){
+      const orig = renderAuditLog;
+      if(!orig.__v146patched){
+        window.renderAuditLog = function(){
+          rebuildSeedUsers();
+          enrichFromState();
+          return orig.apply(this, arguments);
+        };
+        window.renderAuditLog.__v146patched = true;
+      }
+    }
+  });
+
+  setTimeout(function(){
+    rebuildSeedUsers();
+    enrichFromState();
+    try{
+      if(document.getElementById("auditModal")?.classList.contains("show")){
+        renderAuditLog();
+      }
+    }catch(e){}
+  }, 1200);
+
+})();
+</script>
+
+
+<script>
+/* ===== V147 AUDIT FILTER BY POSITION ===== */
+(function(){
+
+  function auditEscV147(v){
+    return String(v ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[s]));
+  }
+
+  function getAuditStateV147(){
+    window.state = window.state || {};
+    if(!Array.isArray(state.auditLog)) state.auditLog = [];
+    return state;
+  }
+
+  function fillAuditPositionFilter(){
+    const sel = document.getElementById("auditPositionFilter");
+    if(!sel) return;
+
+    const current = sel.value;
+    const s = getAuditStateV147();
+
+    const fromPositions = (s.positions || [])
+      .map(p => p.name)
+      .filter(Boolean);
+
+    const fromAudit = (s.auditLog || [])
+      .map(r => r.target)
+      .filter(Boolean)
+      .filter(v => !/журнал|поді|посил|система|контроль/i.test(v));
+
+    const positions = [...new Set([...fromPositions, ...fromAudit])].sort((a,b)=>a.localeCompare(b, "uk"));
+
+    sel.innerHTML =
+      '<option value="">Всі позиції</option>' +
+      positions.map(p => `<option value="${auditEscV147(p)}">${auditEscV147(p)}</option>`).join("");
+
+    sel.value = current;
+  }
+
+  function rowMatchesPosition(row, pos){
+    if(!pos) return true;
+
+    const target = String(row.target || "");
+    const details = String(row.details || "");
+
+    return target === pos ||
+           target.includes(pos) ||
+           details.includes(pos);
+  }
+
+  const oldRender = window.renderAuditLog;
+  if(typeof oldRender === "function" && !oldRender.__v147positionPatched){
+    window.renderAuditLog = function(){
+      const selectedPosition = document.getElementById("auditPositionFilter")?.value || "";
+
+      // If no position chosen, use previous renderer
+      if(!selectedPosition){
+        const result = oldRender.apply(this, arguments);
+        setTimeout(fillAuditPositionFilter, 0);
+        return result;
+      }
+
+      // Custom render with position filter
+      if(typeof seedAuditFromExistingData === "function"){
+        try{ seedAuditFromExistingData(); }catch(e){}
+      }
+
+      const s = getAuditStateV147();
+      const from = document.getElementById("auditFrom")?.value || "";
+      const to = document.getElementById("auditTo")?.value || "";
+      const user = document.getElementById("auditUserFilter")?.value || "";
+      const q = (document.getElementById("auditSearch")?.value || "").toLowerCase();
+
+      let rows = s.auditLog.filter(r=>{
+        const d = new Date(r.at);
+        if(from && d < new Date(from + "T00:00:00")) return false;
+        if(to && d > new Date(to + "T23:59:59")) return false;
+        if(user && r.user !== user) return false;
+        if(!rowMatchesPosition(r, selectedPosition)) return false;
+        if(q){
+          const hay = `${r.user} ${r.action} ${r.target} ${r.details}`.toLowerCase();
+          if(!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      rows.sort((a,b)=>new Date(b.at)-new Date(a.at));
+
+      // refill users
+      const userSel = document.getElementById("auditUserFilter");
+      if(userSel){
+        const cur = userSel.value;
+        const users = [...new Set(s.auditLog.map(r=>r.user).filter(Boolean))].sort();
+        userSel.innerHTML = '<option value="">Всі користувачі</option>' +
+          users.map(u=>`<option value="${auditEscV147(u)}">${auditEscV147(u)}</option>`).join("");
+        userSel.value = cur;
+      }
+
+      fillAuditPositionFilter();
+
+      const body = document.getElementById("auditBody");
+      if(!body) return;
+
+      const fmt = (iso)=>{
+        const d = new Date(iso);
+        if(isNaN(d.getTime())) return iso || "";
+        return d.toLocaleString("uk-UA", {
+          day:"2-digit", month:"2-digit", year:"numeric",
+          hour:"2-digit", minute:"2-digit", second:"2-digit"
+        }).replace(",", "");
+      };
+
+      if(!rows.length){
+        body.innerHTML = `<div class="audit-empty">За вибраною позицією “${auditEscV147(selectedPosition)}” записів немає.</div>`;
+        return;
+      }
+
+      body.innerHTML = `
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th>Дата / час</th>
+              <th>Користувач</th>
+              <th>Дія</th>
+              <th>Обʼєкт</th>
+              <th>Деталі</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r=>`
+              <tr>
+                <td>${auditEscV147(fmt(r.at))}</td>
+                <td>${auditEscV147(r.user || "—")}</td>
+                <td>${auditEscV147(r.action || "—")}</td>
+                <td>${auditEscV147(r.target || "—")}</td>
+                <td>${auditEscV147(r.details || "—")}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>`;
+    };
+
+    window.renderAuditLog.__v147positionPatched = true;
+  }
+
+  const oldOpen = window.openAuditModal;
+  if(typeof oldOpen === "function" && !oldOpen.__v147positionPatched){
+    window.openAuditModal = function(){
+      const result = oldOpen.apply(this, arguments);
+      setTimeout(fillAuditPositionFilter, 80);
+      return result;
+    };
+    window.openAuditModal.__v147positionPatched = true;
+  }
+
+  const oldClear = window.clearAuditFilters;
+  if(typeof oldClear === "function" && !oldClear.__v147positionPatched){
+    window.clearAuditFilters = function(){
+      const pos = document.getElementById("auditPositionFilter");
+      if(pos) pos.value = "";
+      const result = oldClear.apply(this, arguments);
+      setTimeout(fillAuditPositionFilter, 50);
+      return result;
+    };
+    window.clearAuditFilters.__v147positionPatched = true;
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(fillAuditPositionFilter, 300);
+
+    const pos = document.getElementById("auditPositionFilter");
+    if(pos){
+      pos.addEventListener("change", function(){
+        if(typeof renderAuditLog === "function") renderAuditLog();
+      });
+    }
+  });
+
+  setTimeout(fillAuditPositionFilter, 1200);
+
+})();
+</script>
 
 </body>
 </html>
