@@ -11362,6 +11362,130 @@ console.log("Firebase Auth + Roles initialized");
 })();
 </script>
 
+
+<script>
+/* ===== V159 RESTORE POSITION FIX ===== */
+(function(){
+
+  function getPositionByAny(idOrName){
+    if(!window.state || !Array.isArray(state.positions)) return null;
+
+    return state.positions.find(p =>
+      String(p.id) === String(idOrName) ||
+      String(p.name) === String(idOrName)
+    );
+  }
+
+  function addRestoreEventForPosition(p){
+    try{
+      if(!window.state) return;
+      if(!Array.isArray(state.events)) state.events = [];
+
+      const now = new Date();
+
+      state.events.unshift({
+        id: "restore_" + Date.now() + "_" + Math.random().toString(36).slice(2,7),
+        createdAt: now.toISOString(),
+        date: now.toISOString(),
+        type: "Відновлення",
+        positionId: p.id || "",
+        positionName: p.name || "",
+        text: now.toLocaleString("uk-UA", {
+          day:"2-digit",
+          month:"2-digit",
+          year:"numeric",
+          hour:"2-digit",
+          minute:"2-digit"
+        }).replace(",", "") + " Відновлено позицію " + (p.name || "") + "."
+      });
+    }catch(e){}
+  }
+
+  window.restorePositionFixed = function(idOrName){
+    const p = getPositionByAny(idOrName);
+
+    if(!p){
+      alert("Позицію не знайдено для відновлення.");
+      return;
+    }
+
+    p.destroyed = false;
+    p.isDestroyed = false;
+    p.destroyedAt = "";
+    p.destroyedTime = "";
+    p.offlineAt = "";
+    p.noConnectionAt = "";
+
+    p.online = true;
+    p.connected = true;
+    p.connection = true;
+    p.status = "Активна";
+    p.connectionStatus = "На звʼязку";
+    p.link = "На звʼязку";
+    p.lastSeen = new Date().toISOString();
+    p.updatedAt = new Date().toISOString();
+
+    addRestoreEventForPosition(p);
+
+    try{
+      if(typeof addAudit === "function"){
+        addAudit("Відновлено позицію", p.name || idOrName, "Позиція");
+      }
+    }catch(e){}
+
+    try{ if(typeof saveState === "function") saveState(); }catch(e){}
+    try{ if(typeof saveCloud === "function") saveCloud(); }catch(e){}
+    try{ if(typeof saveToCloud === "function") saveToCloud(); }catch(e){}
+
+    try{
+      if(typeof render === "function") render();
+      else if(typeof renderPositions === "function") renderPositions();
+    }catch(e){}
+
+    try{ if(typeof renderStats === "function") renderStats(); }catch(e){}
+
+    if(typeof showToast === "function"){
+      showToast("Позицію відновлено", "success");
+    }
+  };
+
+  ["restorePosition","restoreDestroyed","recoverPosition","setActivePosition"].forEach(function(name){
+    const old = window[name];
+    if(typeof old === "function" && !old.__v159patched){
+      window[name] = function(idOrName){
+        restorePositionFixed(idOrName);
+      };
+      window[name].__v159patched = true;
+    }
+  });
+
+  document.addEventListener("click", function(e){
+    const btn = e.target.closest("button");
+    if(!btn) return;
+
+    const txt = (btn.textContent || "").trim().toLowerCase();
+    if(!txt.includes("відн")) return;
+
+    const row = btn.closest("tr");
+    if(!row) return;
+
+    const posName =
+      row.querySelector(".posname")?.textContent?.trim() ||
+      row.children?.[0]?.textContent?.trim();
+
+    if(!posName) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    e.stopPropagation();
+
+    restorePositionFixed(posName);
+    return false;
+  }, true);
+
+})();
+</script>
+
 </body>
 </html>
 
