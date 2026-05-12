@@ -3120,7 +3120,314 @@ tbody td:nth-child(6){
   }
 }
 
+
+/* ===== V148 MAP MODAL FROM COORDINATES ===== */
+.coord-link{
+  color:#8fe3ff!important;
+  text-decoration:underline dotted!important;
+  cursor:pointer!important;
+  font-weight:900!important;
+}
+#mapModal.show{
+  display:flex!important;
+  z-index:99000!important;
+}
+#mapModal .modal{
+  z-index:99001!important;
+  width:min(1180px,96vw)!important;
+  max-height:92vh!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+#mapModal .modal-body{
+  overflow:auto!important;
+  padding:14px!important;
+}
+.map-info-grid{
+  display:grid!important;
+  grid-template-columns:1fr 1fr 1fr auto auto!important;
+  gap:10px!important;
+  align-items:center!important;
+  margin-bottom:12px!important;
+}
+.map-info-card{
+  background:#0e1c27!important;
+  border:1px solid var(--line)!important;
+  border-radius:12px!important;
+  padding:10px!important;
+  min-height:58px!important;
+}
+.map-info-card b{
+  display:block!important;
+  font-size:13px!important;
+  color:#9eb3c4!important;
+  margin-bottom:4px!important;
+}
+.map-info-card span{
+  font-weight:900!important;
+  color:#fff!important;
+}
+#positionMap{
+  width:100%!important;
+  height:520px!important;
+  border:1px solid var(--line)!important;
+  border-radius:14px!important;
+  overflow:hidden!important;
+  background:#061018!important;
+}
+.map-events{
+  margin-top:12px!important;
+  background:#0e1c27!important;
+  border:1px solid var(--line)!important;
+  border-radius:12px!important;
+  padding:10px!important;
+}
+.map-events-title{
+  font-weight:900!important;
+  color:#f8c943!important;
+  margin-bottom:8px!important;
+}
+.map-event-row{
+  border-top:1px solid rgba(120,170,220,.18)!important;
+  padding:8px 0!important;
+  font-size:13px!important;
+  line-height:1.35!important;
+}
+.map-event-row:first-of-type{border-top:0!important;}
+.map-status-dot{
+  display:inline-block!important;
+  width:12px!important;
+  height:12px!important;
+  border-radius:50%!important;
+  margin-right:7px!important;
+  vertical-align:middle!important;
+}
+.map-status-dot.green{background:#00e676!important;box-shadow:0 0 10px #00e676!important;}
+.map-status-dot.yellow{background:#f8c943!important;box-shadow:0 0 10px #f8c943!important;}
+.map-status-dot.red{background:#ff3d57!important;box-shadow:0 0 10px #ff3d57!important;}
+.map-marker-inner{
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  border:3px solid #fff;
+  box-shadow:0 0 16px rgba(0,0,0,.65);
+}
+.map-marker-inner.green{background:#00e676;}
+.map-marker-inner.yellow{background:#f8c943;}
+.map-marker-inner.red{background:#ff3d57;}
+@media(max-width:900px){
+  .map-info-grid{
+    grid-template-columns:1fr!important;
+  }
+  #positionMap{
+    height:420px!important;
+  }
+}
+
+
+/* ===== V149 MAP CLICK FIXED ===== */
+td.coord-clickable,
+.coord-clickable{
+  color:#8fe3ff!important;
+  text-decoration:underline dotted!important;
+  cursor:pointer!important;
+  font-weight:900!important;
+}
+#mapModal.show{display:flex!important;z-index:99000!important;}
+#mapModal .modal{
+  z-index:99001!important;
+  width:min(1180px,96vw)!important;
+  max-height:92vh!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+#mapModal .modal-body{overflow:auto!important;padding:14px!important;}
+.map-info-grid{
+  display:grid!important;
+  grid-template-columns:1fr 1fr 1fr auto auto!important;
+  gap:10px!important;
+  align-items:center!important;
+  margin-bottom:12px!important;
+}
+.map-info-card{
+  background:#0e1c27!important;
+  border:1px solid var(--line)!important;
+  border-radius:12px!important;
+  padding:10px!important;
+  min-height:58px!important;
+}
+.map-info-card b{display:block!important;font-size:13px!important;color:#9eb3c4!important;margin-bottom:4px!important;}
+.map-info-card span{font-weight:900!important;color:#fff!important;}
+#positionMap{
+  width:100%!important;
+  height:520px!important;
+  border:1px solid var(--line)!important;
+  border-radius:14px!important;
+  overflow:hidden!important;
+  background:#061018!important;
+}
+.map-events{
+  margin-top:12px!important;
+  background:#0e1c27!important;
+  border:1px solid var(--line)!important;
+  border-radius:12px!important;
+  padding:10px!important;
+}
+.map-events-title{font-weight:900!important;color:#f8c943!important;margin-bottom:8px!important;}
+.map-event-row{
+  border-top:1px solid rgba(120,170,220,.18)!important;
+  padding:8px 0!important;
+  font-size:13px!important;
+  line-height:1.35!important;
+}
+.map-event-row:first-of-type{border-top:0!important;}
+.map-status-dot{
+  display:inline-block!important;
+  width:12px!important;
+  height:12px!important;
+  border-radius:50%!important;
+  margin-right:7px!important;
+  vertical-align:middle!important;
+}
+.map-status-dot.green{background:#00e676!important;box-shadow:0 0 10px #00e676!important;}
+.map-status-dot.yellow{background:#f8c943!important;box-shadow:0 0 10px #f8c943!important;}
+.map-status-dot.red{background:#ff3d57!important;box-shadow:0 0 10px #ff3d57!important;}
+.map-marker-inner{
+  width:22px;height:22px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 16px rgba(0,0,0,.65);
+}
+.map-marker-inner.green{background:#00e676;}
+.map-marker-inner.yellow{background:#f8c943;}
+.map-marker-inner.red{background:#ff3d57;}
+@media(max-width:900px){
+  .map-info-grid{grid-template-columns:1fr!important;}
+  #positionMap{height:420px!important;}
+}
+
+
+/* ===== V150 MAP MGRS / COORD COLUMN FIX ===== */
+tbody td.coord-clickable{
+  color:#8fe3ff!important;
+  text-decoration:underline dotted!important;
+  cursor:pointer!important;
+  font-weight:900!important;
+}
+#positionMap{
+  background:#d8e8ee!important;
+}
+.map-help-note{
+  color:#9eb3c4!important;
+  font-size:12px!important;
+  margin-top:6px!important;
+}
+
+
+/* ===== V151 MAP ONLY COORDINATES COLUMN FIX ===== */
+/* Скидаємо помилкове підкреслення з інших колонок */
+tbody td.coord-clickable{
+  color:inherit!important;
+  text-decoration:none!important;
+  cursor:default!important;
+}
+
+/* Клікабельною є тільки 2-га колонка з координатами */
+tbody tr td:nth-child(2).coord-clickable{
+  color:#8fe3ff!important;
+  text-decoration:underline dotted!important;
+  cursor:pointer!important;
+  font-weight:900!important;
+}
+
+tbody tr td:nth-child(6),
+tbody tr td:nth-child(7){
+  color:#fff!important;
+  text-decoration:none!important;
+  cursor:default!important;
+}
+
+tbody tr td:nth-child(6) *,
+tbody tr td:nth-child(7) *{
+  text-decoration:none!important;
+}
+
+
+/* ===== V152 CLEAN MAP CLICK / NO UNDERLINE ===== */
+/* Повністю прибираємо підкреслення, яке могло залишитися від старих патчів */
+tbody td,
+tbody td *,
+.info-table td,
+.info-table td *,
+.person-card *,
+#infoModal *,
+#cardModal *,
+#positionAnalyticsModal *{
+  text-decoration:none!important;
+}
+
+/* Координати клікабельні, але виглядають як звичайний текст */
+.dashboard-content tbody tr td:nth-child(2).coord-clickable{
+  color:#8fe3ff!important;
+  text-decoration:none!important;
+  cursor:pointer!important;
+  font-weight:900!important;
+}
+
+/* У всіх модальних вікнах координатний патч не працює */
+.modal tbody td.coord-clickable,
+.modal tbody td.coord-clickable *,
+.modal .coord-clickable,
+.modal .coord-clickable *{
+  color:inherit!important;
+  text-decoration:none!important;
+  cursor:default!important;
+}
+
+
+/* ===== V153 MAP NO JITTER ===== */
+tbody td.coord-clickable,
+tbody td.coord-clickable *{
+  text-decoration:none!important;
+}
+
+.dashboard-content tbody tr td:nth-child(2).coord-clickable{
+  color:#8fe3ff!important;
+  cursor:pointer!important;
+  font-weight:900!important;
+  text-decoration:none!important;
+}
+
+.modal .coord-clickable,
+.modal .coord-clickable *{
+  color:inherit!important;
+  cursor:default!important;
+  text-decoration:none!important;
+}
+
+#positionMap{
+  width:100%!important;
+  height:520px!important;
+  min-height:520px!important;
+  border:1px solid var(--line)!important;
+  border-radius:14px!important;
+  overflow:hidden!important;
+  background:#d8e8ee!important;
+}
+
+
+/* ===== V154 ESRI SATELLITE LABELS ===== */
+#positionMap{
+  background:#111!important;
+}
+.map-help-note{
+  color:#9eb3c4!important;
+  font-size:12px!important;
+  margin-top:6px!important;
+}
+
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 <div id="floatBackdrop" class="hidden" onclick="closeFloatingPanels()"></div>
@@ -10374,6 +10681,397 @@ console.log("Firebase Auth + Roles initialized");
 
   setTimeout(fillAuditPositionFilter, 1200);
 
+})();
+</script>
+
+
+<div class="modal-backdrop" id="mapModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="mapModalTitle">Карта позиції</div>
+      <button class="red small" type="button" onclick="closeMapModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="map-info-grid">
+        <div class="map-info-card"><b>Позиція</b><span id="mapPosName">—</span></div>
+        <div class="map-info-card"><b>Координати</b><span id="mapCoordsText">—</span></div>
+        <div class="map-info-card"><b>Статус</b><span id="mapStatusText">—</span></div>
+        <button class="blue" type="button" onclick="openDeepStateFromMap()">DeepState</button>
+        <button class="green" type="button" onclick="copyMapCoords()">Copy координати</button>
+      </div>
+      <div id="positionMap"></div><div class="map-help-note">🛰 Esri супутник з написами</div>
+      <div class="map-events">
+        <div class="map-events-title">Останні події по позиції</div>
+        <div id="mapEventsList">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+/* ===== V153 MAP NO JITTER ===== */
+(function(){
+  let mapV153 = null;
+  let markerV153 = null;
+  window.__currentMapCoords = null;
+
+  function cleanCoord(raw){
+    return String(raw || "")
+      .replace(/н\.п\..*$/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function isMgrs(raw){
+    const s = cleanCoord(raw).toUpperCase();
+    return /^\d{1,2}[C-HJ-NP-X]\s*[A-HJ-NP-Z]{2}\s*\d{2,5}\s*\d{2,5}$/.test(s) ||
+           /^\d{1,2}[C-HJ-NP-X]\s*[A-HJ-NP-Z]{2}\d{4,10}$/.test(s);
+  }
+
+  function escHtml(v){
+    return String(v ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[s]));
+  }
+
+  function bandSouth(band){
+    const m = {C:-80,D:-72,E:-64,F:-56,G:-48,H:-40,J:-32,K:-24,L:-16,M:-8,N:0,P:8,Q:16,R:24,S:32,T:40,U:48,V:56,W:64,X:72};
+    return m[String(band || "").toUpperCase()];
+  }
+
+  function utmToLatLon(zone, easting, northing, northern){
+    const a=6378137.0, eccSquared=0.00669438, k0=0.9996;
+    const eccPrimeSquared=eccSquared/(1-eccSquared);
+    const e1=(1-Math.sqrt(1-eccSquared))/(1+Math.sqrt(1-eccSquared));
+    const x=easting-500000.0;
+    let y=northing;
+    if(!northern) y-=10000000.0;
+    const longOrigin=(zone-1)*6-180+3;
+    const M=y/k0;
+    const mu=M/(a*(1-eccSquared/4-3*eccSquared*eccSquared/64-5*Math.pow(eccSquared,3)/256));
+    const phi1Rad=mu
+      +(3*e1/2-27*Math.pow(e1,3)/32)*Math.sin(2*mu)
+      +(21*e1*e1/16-55*Math.pow(e1,4)/32)*Math.sin(4*mu)
+      +(151*Math.pow(e1,3)/96)*Math.sin(6*mu);
+    const N1=a/Math.sqrt(1-eccSquared*Math.sin(phi1Rad)*Math.sin(phi1Rad));
+    const T1=Math.tan(phi1Rad)*Math.tan(phi1Rad);
+    const C1=eccPrimeSquared*Math.cos(phi1Rad)*Math.cos(phi1Rad);
+    const R1=a*(1-eccSquared)/Math.pow(1-eccSquared*Math.sin(phi1Rad)*Math.sin(phi1Rad),1.5);
+    const D=x/(N1*k0);
+    let lat=phi1Rad-(N1*Math.tan(phi1Rad)/R1)*(D*D/2-(5+3*T1+10*C1-4*C1*C1-9*eccPrimeSquared)*Math.pow(D,4)/24+(61+90*T1+298*C1+45*T1*T1-252*eccPrimeSquared-3*C1*C1)*Math.pow(D,6)/720);
+    lat=lat*180/Math.PI;
+    let lon=(D-(1+2*T1+C1)*Math.pow(D,3)/6+(5-2*C1+28*T1-3*C1*C1+8*eccPrimeSquared+24*T1*T1)*Math.pow(D,5)/120)/Math.cos(phi1Rad);
+    lon=longOrigin+lon*180/Math.PI;
+    return {lat,lng:lon};
+  }
+
+  function mgrsToLatLon(raw){
+    let s=cleanCoord(raw).toUpperCase();
+    let m=s.match(/^(\d{1,2})([C-HJ-NP-X])\s*([A-HJ-NP-Z]{2})\s*(\d{2,5})\s*(\d{2,5})$/);
+    if(!m){
+      m=s.match(/^(\d{1,2})([C-HJ-NP-X])\s*([A-HJ-NP-Z]{2})(\d{4,10})$/);
+      if(m){
+        const digits=m[4], half=Math.floor(digits.length/2);
+        m=[m[0],m[1],m[2],m[3],digits.slice(0,half),digits.slice(half)];
+      }
+    }
+    if(!m) return null;
+
+    const zone=Number(m[1]), band=m[2], square=m[3];
+    const eR=Number(m[4].padEnd(5,"0"));
+    const nR=Number(m[5].padEnd(5,"0"));
+
+    const colSets=["ABCDEFGH","JKLMNPQR","STUVWXYZ"];
+    const colSet=colSets[(zone-1)%3];
+    const colIndex=colSet.indexOf(square[0]);
+    if(colIndex<0) return null;
+    const e100k=(colIndex+1)*100000;
+
+    const rowLetters="ABCDEFGHJKLMNPQRSTUV";
+    const rowOrigin=(zone%2===0)?5:0;
+    const rowIndex=rowLetters.indexOf(square[1]);
+    if(rowIndex<0) return null;
+    let n100k=((rowIndex-rowOrigin+20)%20)*100000;
+    let northing=n100k+nR;
+
+    const south=bandSouth(band);
+    const northern=band>="N";
+    for(let i=0;i<6;i++){
+      const test=utmToLatLon(zone,e100k+eR,northing,northern);
+      if(test.lat>=south-1 && test.lat<south+10) break;
+      northing+=2000000;
+    }
+
+    const ll=utmToLatLon(zone,e100k+eR,northing,northern);
+    return {lat:ll.lat,lng:ll.lng,raw:raw,normalized:`${zone}${band} ${square} ${m[4]} ${m[5]}`};
+  }
+
+  function parseCoord(raw){
+    const s=cleanCoord(raw);
+    if(isMgrs(s)) return mgrsToLatLon(s);
+
+    if(/^-?\d{1,2}[.,]\d+[\s,;]+-?\d{1,3}[.,]\d+$/.test(s)){
+      const nums=s.match(/-?\d{1,3}(?:[.,]\d+)?/g);
+      const lat=parseFloat(nums[0].replace(",","."));
+      const lng=parseFloat(nums[1].replace(",","."));
+      if(Math.abs(lat)<=90 && Math.abs(lng)<=180) return {lat,lng,raw:s,normalized:s};
+    }
+    return null;
+  }
+
+  function posCoords(p){
+    return p?.coords || p?.coord || p?.coordinates || p?.gps || p?.location || "";
+  }
+
+  function statusOf(p){
+    const s=String(p?.status||"").toLowerCase();
+    if(p?.destroyed || p?.isDestroyed || s.includes("знищ")) return {text:"Знищена", color:"red"};
+    if(p?.online===false || p?.connected===false || p?.connection===false || s.includes("нема")) return {text:"Немає звʼязку", color:"yellow"};
+    return {text:"Активна / на звʼязку", color:"green"};
+  }
+
+  function findPosition(row, raw){
+    const name=row?.querySelector(".posname")?.textContent?.trim() || row?.children?.[0]?.textContent?.trim() || "";
+    const list=window.state?.positions || [];
+    return list.find(p=>p.name===name) ||
+           list.find(p=>cleanCoord(posCoords(p))===cleanCoord(raw)) ||
+           {name:name || "Позиція", coords:raw};
+  }
+
+  function dateText(e){
+    const d=new Date(e?.createdAt || e?.date || e?.time || e?.ts || e?.timestamp || 0);
+    if(isNaN(d.getTime())) return "";
+    return d.toLocaleString("uk-UA",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}).replace(",","");
+  }
+
+  function eventsFor(p){
+    const name=p?.name || "", id=p?.id || "";
+    return (window.state?.events || []).filter(e=>{
+      const hay=`${e.positionName||""} ${e.position||""} ${e.pos||""} ${e.text||""} ${e.message||""} ${e.description||""}`;
+      return (name && hay.includes(name)) || (id && hay.includes(id));
+    }).sort((a,b)=>new Date(b.createdAt||b.date||b.time||0)-new Date(a.createdAt||a.date||a.time||0)).slice(0,8);
+  }
+
+  window.openPositionMap = function(positionObj, rawCoord){
+    const p=typeof positionObj==="object" ? positionObj : {name:String(positionObj||"Позиція"), coords:rawCoord};
+    const c=parseCoord(rawCoord || posCoords(p));
+    if(!c){
+      alert("Не вдалося розпізнати координати.");
+      return;
+    }
+
+    window.__currentMapCoords=c;
+    const st=statusOf(p);
+
+    document.getElementById("mapPosName").textContent=p.name || "—";
+    document.getElementById("mapCoordsText").textContent=c.normalized || c.raw;
+    document.getElementById("mapStatusText").innerHTML=`<span class="map-status-dot ${st.color}"></span>${escHtml(st.text)}`;
+
+    const evs=eventsFor(p);
+    document.getElementById("mapEventsList").innerHTML=evs.length ? evs.map(e=>`
+      <div class="map-event-row"><b>${escHtml(dateText(e))}</b><br>${escHtml(e.text || e.message || e.description || e.type || "Подія")}</div>
+    `).join("") : '<div class="audit-empty">Подій по цій позиції немає.</div>';
+
+    document.getElementById("mapModal").classList.add("show");
+    document.body.classList.add("modal-open");
+
+    setTimeout(()=>{
+      if(!window.L){
+        document.getElementById("positionMap").innerHTML='<div class="audit-empty">Карта не завантажилась. Потрібен інтернет.</div>';
+        return;
+      }
+
+      if(!mapV153){
+        mapV153=L.map("positionMap",{zoomControl:true});
+        L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{
+          maxZoom:19,
+          attribution:"Tiles © Esri"
+        }).addTo(mapV153);
+        L.tileLayer("https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{
+          maxZoom:19,
+          attribution:"Labels © Esri"
+        }).addTo(mapV153);
+      }
+
+      mapV153.setView([c.lat,c.lng],15);
+      if(markerV153) markerV153.remove();
+
+      const icon=L.divIcon({
+        className:"",
+        html:`<div class="map-marker-inner ${st.color}"></div>`,
+        iconSize:[28,28],
+        iconAnchor:[14,14]
+      });
+
+      markerV153=L.marker([c.lat,c.lng],{icon}).addTo(mapV153)
+        .bindPopup(`<b>${escHtml(p.name || "Позиція")}</b><br>${escHtml(st.text)}<br>${escHtml(c.normalized || c.raw)}`)
+        .openPopup();
+
+      mapV153.invalidateSize();
+    },250);
+  };
+
+  window.closeMapModal=function(){
+    document.getElementById("mapModal")?.classList.remove("show");
+    document.body.classList.remove("modal-open");
+  };
+
+  window.copyMapCoords=function(){
+    const c=window.__currentMapCoords;
+    if(!c) return;
+    const txt=c.normalized || c.raw || `${c.lat}, ${c.lng}`;
+    navigator.clipboard?.writeText(txt).then(()=>alert("Координати скопійовано")).catch(()=>prompt("Координати:",txt));
+  };
+
+  window.openDeepStateFromMap=function(){
+    const c=window.__currentMapCoords;
+    if(c) window.open(`https://deepstatemap.live/#14/${c.lat}/${c.lng}`,"_blank");
+  };
+
+  function markCoordsOnce(){
+    document.querySelectorAll(".dashboard-content tbody tr").forEach(row=>{
+      if(row.closest(".modal")) return;
+      if(!row.querySelector(".posname")) return;
+
+      const cells=Array.from(row.children || []);
+      const coordTd=cells[1];
+      if(!coordTd) return;
+
+      const raw=cleanCoord(coordTd.textContent);
+      if(parseCoord(raw)){
+        coordTd.classList.add("coord-clickable");
+        coordTd.dataset.coordsRaw=raw;
+        coordTd.title="Відкрити карту позиції";
+      }
+    });
+  }
+
+  document.addEventListener("click", function(e){
+    const td=e.target.closest(".dashboard-content tbody tr td:nth-child(2)");
+    if(!td || td.closest(".modal")) return;
+
+    const raw=td.dataset.coordsRaw || cleanCoord(td.textContent);
+    if(!parseCoord(raw)) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    openPositionMap(findPosition(td.closest("tr"), raw), raw);
+  }, false);
+
+  const oldRender=window.render;
+  if(typeof oldRender==="function" && !oldRender.__v153NoJitter){
+    window.render=function(){
+      const r=oldRender.apply(this,arguments);
+      requestAnimationFrame(markCoordsOnce);
+      return r;
+    };
+    window.render.__v153NoJitter=true;
+  }
+
+  const oldRenderPositions=window.renderPositions;
+  if(typeof oldRenderPositions==="function" && !oldRenderPositions.__v153NoJitter){
+    window.renderPositions=function(){
+      const r=oldRenderPositions.apply(this,arguments);
+      requestAnimationFrame(markCoordsOnce);
+      return r;
+    };
+    window.renderPositions.__v153NoJitter=true;
+  }
+
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(markCoordsOnce,400));
+})();
+</script>
+
+
+<script>
+/* ===== V154 ESRI SATELLITE WITH LABELS ===== */
+(function(){
+  function addEsriSatelliteWithLabels(map){
+    if(!window.L || !map) return;
+
+    // remove existing tile layers
+    try{
+      map.eachLayer(function(layer){
+        if(layer instanceof L.TileLayer){
+          map.removeLayer(layer);
+        }
+      });
+    }catch(e){}
+
+    const esriSat = L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom:19,
+        attribution:"Tiles © Esri"
+      }
+    );
+
+    const esriLabels = L.tileLayer(
+      "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom:19,
+        attribution:"Labels © Esri",
+        pane:"overlayPane"
+      }
+    );
+
+    esriSat.addTo(map);
+    esriLabels.addTo(map);
+  }
+
+  // Patch Leaflet map creation/result after any openPositionMap call
+  const oldOpenPositionMap = window.openPositionMap;
+  if(typeof oldOpenPositionMap === "function" && !oldOpenPositionMap.__v154Esri){
+    window.openPositionMap = function(){
+      const result = oldOpenPositionMap.apply(this, arguments);
+
+      setTimeout(function(){
+        // Find the active Leaflet map object from common globals/DOM internals
+        const mapEl = document.getElementById("positionMap");
+        if(!mapEl || !window.L) return;
+
+        // Try known variable leaks are not accessible, so discover via Leaflet id
+        for(const key in window){
+          try{
+            const v = window[key];
+            if(v && typeof v.eachLayer === "function" && typeof v.setView === "function" && v._container === mapEl){
+              addEsriSatelliteWithLabels(v);
+              break;
+            }
+          }catch(e){}
+        }
+
+        // Fallback: use Leaflet's internal map id registry when reachable
+        try{
+          if(mapEl._leaflet_id && window.L && L.Map){
+            // cannot directly access registry in all builds, so no-op fallback
+          }
+        }catch(e){}
+      }, 500);
+
+      return result;
+    };
+    window.openPositionMap.__v154Esri = true;
+  }
+
+  // Direct source-code patch fallback: future-created maps should use Esri
 })();
 </script>
 
