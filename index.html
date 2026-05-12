@@ -3425,6 +3425,65 @@ tbody td.coord-clickable *{
   margin-top:6px!important;
 }
 
+
+/* ===== V155 MAP MARKER STATUS COLORS ===== */
+.map-marker-inner.green,
+.map-status-dot.green{
+  background:#00e676!important;
+  box-shadow:0 0 14px #00e676!important;
+}
+.map-marker-inner.yellow,
+.map-status-dot.yellow{
+  background:#f8c943!important;
+  box-shadow:0 0 14px #f8c943!important;
+}
+.map-marker-inner.red,
+.map-status-dot.red{
+  background:#ff3d57!important;
+  box-shadow:0 0 14px #ff3d57!important;
+}
+.map-legend{
+  display:flex!important;
+  gap:14px!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  margin:8px 0 10px!important;
+  padding:9px 10px!important;
+  border:1px solid var(--line)!important;
+  border-radius:10px!important;
+  background:#0e1c27!important;
+  font-size:13px!important;
+  font-weight:900!important;
+}
+.map-legend span{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:6px!important;
+}
+
+
+/* ===== V157 SAFE MAP FILTER ===== */
+.map-top-actions{
+  display:flex!important;
+  gap:10px!important;
+  align-items:center!important;
+  flex-wrap:wrap!important;
+}
+.map-filter-btn{
+  border:0!important;
+  border-radius:10px!important;
+  padding:10px 14px!important;
+  font-weight:900!important;
+  cursor:pointer!important;
+  background:#183247!important;
+  color:#fff!important;
+}
+.map-filter-btn.active{
+  background:#00b96b!important;
+  color:#fff!important;
+  box-shadow:0 0 12px rgba(0,185,107,.45)!important;
+}
+
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -10696,8 +10755,14 @@ console.log("Firebase Auth + Roles initialized");
         <div class="map-info-card"><b>Позиція</b><span id="mapPosName">—</span></div>
         <div class="map-info-card"><b>Координати</b><span id="mapCoordsText">—</span></div>
         <div class="map-info-card"><b>Статус</b><span id="mapStatusText">—</span></div>
+        <div class="map-top-actions"><button class="map-filter-btn active" id="singlePointBtn" type="button" onclick="showSinglePointMap()">Тільки ця точка</button><button class="map-filter-btn" id="allPointsBtn" type="button" onclick="showAllPointsMap()">Всі позиції</button></div>
         <button class="blue" type="button" onclick="openDeepStateFromMap()">DeepState</button>
         <button class="green" type="button" onclick="copyMapCoords()">Copy координати</button>
+      </div>
+      <div class="map-legend">
+        <span><i class="map-status-dot green"></i> зелений — активна</span>
+        <span><i class="map-status-dot yellow"></i> жовтий — нема зв’язку</span>
+        <span><i class="map-status-dot red"></i> червоний — знищена</span>
       </div>
       <div id="positionMap"></div><div class="map-help-note">🛰 Esri супутник з написами</div>
       <div class="map-events">
@@ -10727,7 +10792,7 @@ console.log("Firebase Auth + Roles initialized");
 <script>
 /* ===== V153 MAP NO JITTER ===== */
 (function(){
-  let mapV153 = null;
+  window.mapV153 = window.mapV153 || null;
   let markerV153 = null;
   window.__currentMapCoords = null;
 
@@ -10846,6 +10911,8 @@ console.log("Firebase Auth + Roles initialized");
     return {text:"Активна / на звʼязку", color:"green"};
   }
 
+  window.parseCoord = parseCoord;
+
   function findPosition(row, raw){
     const name=row?.querySelector(".posname")?.textContent?.trim() || row?.children?.[0]?.textContent?.trim() || "";
     const list=window.state?.positions || [];
@@ -10897,19 +10964,19 @@ console.log("Firebase Auth + Roles initialized");
         return;
       }
 
-      if(!mapV153){
-        mapV153=L.map("positionMap",{zoomControl:true});
+      if(!window.mapV153){
+        window.mapV153=L.map("positionMap",{zoomControl:true});
         L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{
           maxZoom:19,
           attribution:"Tiles © Esri"
-        }).addTo(mapV153);
+        }).addTo(window.mapV153);
         L.tileLayer("https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{
           maxZoom:19,
           attribution:"Labels © Esri"
-        }).addTo(mapV153);
+        }).addTo(window.mapV153);
       }
 
-      mapV153.setView([c.lat,c.lng],15);
+      window.mapV153.setView([c.lat,c.lng],15);
       if(markerV153) markerV153.remove();
 
       const icon=L.divIcon({
@@ -10919,11 +10986,11 @@ console.log("Firebase Auth + Roles initialized");
         iconAnchor:[14,14]
       });
 
-      markerV153=L.marker([c.lat,c.lng],{icon}).addTo(mapV153)
+      markerV153=L.marker([c.lat,c.lng],{icon}).addTo(window.mapV153)
         .bindPopup(`<b>${escHtml(p.name || "Позиція")}</b><br>${escHtml(st.text)}<br>${escHtml(c.normalized || c.raw)}`)
         .openPopup();
 
-      mapV153.invalidateSize();
+      window.mapV153.invalidateSize();
     },250);
   };
 
@@ -11072,6 +11139,226 @@ console.log("Firebase Auth + Roles initialized");
   }
 
   // Direct source-code patch fallback: future-created maps should use Esri
+})();
+</script>
+
+
+<script>
+/* ===== V155 MAP STATUS COLOR RULES ===== */
+(function(){
+  window.getMapStatusColorV155 = function(p){
+    const s = String(p?.status || "").toLowerCase();
+    const link = String(p?.link || p?.connectionText || p?.connectionStatus || "").toLowerCase();
+
+    const destroyed =
+      p?.destroyed === true ||
+      p?.isDestroyed === true ||
+      s.includes("знищ");
+
+    const offline =
+      p?.online === false ||
+      p?.connected === false ||
+      p?.connection === false ||
+      s.includes("нема") ||
+      s.includes("без зв") ||
+      link.includes("нема") ||
+      link.includes("без зв");
+
+    if(destroyed) return {text:"Знищена", color:"red"};
+    if(offline) return {text:"Немає зв’язку", color:"yellow"};
+    return {text:"Активна", color:"green"};
+  };
+
+  // Перевизначаємо statusOf у коді карти, якщо старий скрипт використовує локальну логіку — додатково
+  // підчищаємо відображення після відкриття карти.
+  const oldOpen = window.openPositionMap;
+  if(typeof oldOpen === "function" && !oldOpen.__v155StatusColors){
+    window.openPositionMap = function(positionObj, rawCoord){
+      const result = oldOpen.apply(this, arguments);
+
+      setTimeout(function(){
+        const p = typeof positionObj === "object" ? positionObj : {};
+        const st = window.getMapStatusColorV155(p);
+        const statusEl = document.getElementById("mapStatusText");
+        if(statusEl){
+          statusEl.innerHTML = `<span class="map-status-dot ${st.color}"></span>${st.text}`;
+        }
+
+        const marker = document.querySelector(".map-marker-inner");
+        if(marker){
+          marker.classList.remove("green","yellow","red");
+          marker.classList.add(st.color);
+        }
+      }, 300);
+
+      return result;
+    };
+    window.openPositionMap.__v155StatusColors = true;
+  }
+})();
+</script>
+
+
+
+
+
+<script>
+/* ===== V158 WORKING MAP FILTER ALL POINTS ===== */
+(function(){
+  window.__mapMode = "single";
+  window.__allPositionMarkers = [];
+  window.__currentMapPosition = null;
+
+  function cleanCoord(raw){
+    return String(raw || "").replace(/н\.п\..*$/i, "").replace(/\s+/g, " ").trim();
+  }
+
+  function markerIcon(color){
+    return L.divIcon({
+      className:"",
+      html:'<div class="map-marker-inner '+color+'"></div>',
+      iconSize:[28,28],
+      iconAnchor:[14,14]
+    });
+  }
+
+  function colorForPosition(p){
+    const s = String(p?.status || "").toLowerCase();
+    const link = String(p?.connectionText || p?.link || "").toLowerCase();
+
+    if(p?.destroyed || p?.isDestroyed || s.includes("знищ")) return "red";
+
+    if(
+      p?.online === false ||
+      p?.connected === false ||
+      p?.connection === false ||
+      s.includes("нема") ||
+      s.includes("без зв") ||
+      link.includes("нема") ||
+      link.includes("без зв")
+    ){
+      return "yellow";
+    }
+
+    return "green";
+  }
+
+  function parseCoordSafe(raw){
+    if(typeof window.parseCoord === "function"){
+      try{
+        const parsed = window.parseCoord(raw);
+        if(parsed) return parsed;
+      }catch(e){}
+    }
+
+    const s = cleanCoord(raw);
+    const m = s.match(/(-?\d{1,2}[.,]\d+)[\s,;]+(-?\d{1,3}[.,]\d+)/);
+    if(m){
+      const lat = parseFloat(m[1].replace(",", "."));
+      const lng = parseFloat(m[2].replace(",", "."));
+      if(isFinite(lat) && isFinite(lng)) return {lat,lng,raw:s,normalized:s};
+    }
+
+    return null;
+  }
+
+  function clearExtraMarkers(){
+    if(!window.mapV153) return;
+
+    try{
+      window.__allPositionMarkers.forEach(m => {
+        try{ window.mapV153.removeLayer(m); }catch(e){}
+      });
+    }catch(e){}
+
+    window.__allPositionMarkers = [];
+  }
+
+  window.showSinglePointMap = function(){
+    window.__mapMode = "single";
+
+    document.getElementById("singlePointBtn")?.classList.add("active");
+    document.getElementById("allPointsBtn")?.classList.remove("active");
+
+    if(!window.mapV153 || !window.L) return;
+
+    clearExtraMarkers();
+
+    const c = window.__currentMapCoords;
+    const p = window.__currentMapPosition || {};
+    if(!c) return;
+
+    const marker = L.marker([c.lat, c.lng], {
+      icon:markerIcon(colorForPosition(p))
+    }).addTo(window.mapV153);
+
+    marker.bindPopup(
+      '<b>' + (p.name || 'Позиція') + '</b><br>' +
+      (c.normalized || c.raw || '')
+    ).openPopup();
+
+    window.__allPositionMarkers.push(marker);
+    window.mapV153.setView([c.lat, c.lng], 15);
+  };
+
+  window.showAllPointsMap = function(){
+    window.__mapMode = "all";
+
+    document.getElementById("allPointsBtn")?.classList.add("active");
+    document.getElementById("singlePointBtn")?.classList.remove("active");
+
+    if(!window.mapV153 || !window.L || !window.state || !Array.isArray(state.positions)) return;
+
+    clearExtraMarkers();
+
+    const bounds = [];
+
+    state.positions.forEach(pos => {
+      const raw = pos.coords || pos.coord || pos.coordinates || pos.gps || pos.location || "";
+      const parsed = parseCoordSafe(raw);
+      if(!parsed) return;
+
+      const marker = L.marker([parsed.lat, parsed.lng], {
+        icon:markerIcon(colorForPosition(pos))
+      }).addTo(window.mapV153);
+
+      marker.bindPopup(
+        '<b>' + (pos.name || 'Позиція') + '</b><br>' +
+        raw + '<br>' +
+        (colorForPosition(pos)==='green' ? 'Активна' : colorForPosition(pos)==='yellow' ? 'Немає зв’язку' : 'Знищена')
+      );
+
+      window.__allPositionMarkers.push(marker);
+      bounds.push([parsed.lat, parsed.lng]);
+    });
+
+    if(bounds.length){
+      window.mapV153.fitBounds(bounds, {padding:[40,40]});
+    }else{
+      alert("Не вдалося знайти координати інших позицій.");
+    }
+  };
+
+  const oldOpenPositionMap = window.openPositionMap;
+  if(typeof oldOpenPositionMap === "function" && !oldOpenPositionMap.__v158MapFilter){
+    window.openPositionMap = function(positionObj, rawCoord){
+      window.__currentMapPosition = typeof positionObj === "object"
+        ? positionObj
+        : {name:String(positionObj || "Позиція")};
+
+      const result = oldOpenPositionMap.apply(this, arguments);
+
+      setTimeout(function(){
+        document.getElementById("singlePointBtn")?.classList.add("active");
+        document.getElementById("allPointsBtn")?.classList.remove("active");
+        window.__mapMode = "single";
+      }, 600);
+
+      return result;
+    };
+
+    window.openPositionMap.__v158MapFilter = true;
+  }
 })();
 </script>
 
