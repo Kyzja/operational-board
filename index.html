@@ -3484,6 +3484,57 @@ tbody td.coord-clickable *{
   box-shadow:0 0 12px rgba(0,185,107,.45)!important;
 }
 
+
+/* ===== V160 PACKAGE HISTORY BY POSITION ===== */
+.package-position-link{
+  cursor:pointer!important;
+  color:#8fe3ff!important;
+  font-weight:900!important;
+  text-decoration:none!important;
+}
+.package-position-link:hover{color:#f8c943!important;}
+#packageHistoryModal.show{display:flex!important;z-index:99100!important;}
+#packageHistoryModal .modal{
+  z-index:99101!important;
+  width:min(980px,94vw)!important;
+  max-height:90vh!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+#packageHistoryModal .modal-body{overflow:auto!important;}
+.package-history-summary{
+  display:grid!important;
+  grid-template-columns:repeat(3,1fr)!important;
+  gap:10px!important;
+  margin-bottom:12px!important;
+}
+.package-history-card{
+  background:#0e1c27!important;
+  border:1px solid var(--line)!important;
+  border-radius:12px!important;
+  padding:12px!important;
+}
+.package-history-card b{display:block!important;font-size:24px!important;margin-bottom:4px!important;}
+.package-history-card span{color:var(--muted)!important;font-size:12px!important;}
+.package-history-table{
+  width:100%!important;
+  border-collapse:collapse!important;
+  table-layout:fixed!important;
+}
+.package-history-table th,
+.package-history-table td{
+  border:1px solid var(--line)!important;
+  padding:9px!important;
+  vertical-align:top!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  font-size:13px!important;
+  line-height:1.35!important;
+}
+.package-history-table th{background:#20384c!important;}
+@media(max-width:800px){.package-history-summary{grid-template-columns:1fr!important;}}
+
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -11481,6 +11532,401 @@ console.log("Firebase Auth + Roles initialized");
 
     restorePositionFixed(posName);
     return false;
+  }, true);
+
+})();
+</script>
+
+
+<div class="modal-backdrop" id="packageHistoryModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="packageHistoryTitle">Історія посилок</div>
+      <button class="red small" type="button" onclick="closePackageHistoryModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="packageHistoryBody"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ===== V160 PACKAGE HISTORY BY POSITION ===== */
+(function(){
+  function h(v){
+    return String(v ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[s]));
+  }
+
+  function packageDateValue(p){
+    return p?.createdAt || p?.date || p?.time || p?.deliveredAt || p?.updatedAt || p?.timestamp || "";
+  }
+
+  function fmtPackageDate(v){
+    const d = new Date(v);
+    if(isNaN(d.getTime())) return v || "—";
+    return d.toLocaleString("uk-UA", {
+      day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"
+    }).replace(",", "");
+  }
+
+  function packagePositionName(p){
+    return p?.positionName || p?.position || p?.posName || p?.pos || p?.name || "";
+  }
+
+  function packageText(p){
+    return p?.text || p?.description || p?.note || p?.comment || p?.title || p?.type || "Посилка";
+  }
+
+  function packageQty(p){
+    return p?.qty || p?.count || p?.amount || p?.people || p?.personnel || "";
+  }
+
+  function packageStatus(p){
+    return p?.status || p?.state || p?.result || "—";
+  }
+
+  function getPackagesForPosition(posName){
+    const list = Array.isArray(state?.packages) ? state.packages : [];
+    return list
+      .filter(p => {
+        const name = packagePositionName(p);
+        const hay = `${name} ${packageText(p)} ${p.positionId || ""}`.toLowerCase();
+        return hay.includes(String(posName || "").toLowerCase());
+      })
+      .sort((a,b)=>new Date(packageDateValue(b)||0)-new Date(packageDateValue(a)||0));
+  }
+
+  window.openPackageHistoryModal = function(posName){
+    const modal = document.getElementById("packageHistoryModal");
+    const title = document.getElementById("packageHistoryTitle");
+    const body = document.getElementById("packageHistoryBody");
+    if(!modal || !body) return;
+
+    const rows = getPackagesForPosition(posName);
+    title.textContent = "Історія посилок: " + posName;
+
+    const latest = rows[0] ? fmtPackageDate(packageDateValue(rows[0])) : "—";
+    const total = rows.length;
+    const totalQty = rows.reduce((sum,p)=>{
+      const n = Number(packageQty(p));
+      return sum + (isFinite(n) ? n : 0);
+    },0);
+
+    body.innerHTML = `
+      <div class="package-history-summary">
+        <div class="package-history-card"><b>${total}</b><span>Усього записів посилок</span></div>
+        <div class="package-history-card"><b>${totalQty || "—"}</b><span>Кількість / В/С, якщо вказано</span></div>
+        <div class="package-history-card"><b>${h(latest)}</b><span>Остання посилка</span></div>
+      </div>
+      ${rows.length ? `
+        <table class="package-history-table">
+          <thead><tr><th>Дата / час</th><th>Посилка / опис</th><th>К-сть</th><th>Статус</th><th>Хто створив</th></tr></thead>
+          <tbody>
+            ${rows.map(p=>`
+              <tr>
+                <td>${h(fmtPackageDate(packageDateValue(p)))}</td>
+                <td>${h(packageText(p))}</td>
+                <td>${h(packageQty(p) || "—")}</td>
+                <td>${h(packageStatus(p))}</td>
+                <td>${h(p.createdByName || p.createdBy || p.user || p.author || "—")}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      ` : `<div class="empty">По цій позиції історії посилок немає.</div>`}
+    `;
+
+    modal.classList.add("show");
+  };
+
+  window.closePackageHistoryModal = function(){
+    document.getElementById("packageHistoryModal")?.classList.remove("show");
+  };
+
+  function markPackagePositionLinks(){
+    const modal = document.getElementById("packagesModal");
+    if(!modal || !modal.classList.contains("show")) return;
+
+    modal.querySelectorAll("table tbody tr").forEach(row=>{
+      const firstTd = row.children?.[0];
+      if(!firstTd || firstTd.querySelector(".package-position-link")) return;
+
+      const fullText = firstTd.textContent.trim();
+      const posName = fullText.split(/\n/)[0].trim();
+      if(!posName || posName === "—") return;
+
+      const meta = firstTd.querySelector(".meta")?.outerHTML || "";
+      firstTd.innerHTML = `<span class="package-position-link" data-package-pos="${h(posName)}">${h(posName)}</span>${meta ? "<br>"+meta : ""}`;
+    });
+  }
+
+  document.addEventListener("click", function(e){
+    const link = e.target.closest(".package-position-link");
+    if(!link) return;
+
+    const pos = link.dataset.packagePos || link.textContent.trim();
+    if(!pos) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    openPackageHistoryModal(pos);
+  }, true);
+
+  const oldRenderPackages = window.renderPackagesModal;
+  if(typeof oldRenderPackages === "function" && !oldRenderPackages.__v160History){
+    window.renderPackagesModal = function(){
+      const r = oldRenderPackages.apply(this, arguments);
+      setTimeout(markPackagePositionLinks, 0);
+      return r;
+    };
+    window.renderPackagesModal.__v160History = true;
+  }
+
+  const oldOpenPackages = window.openPackagesModal;
+  if(typeof oldOpenPackages === "function" && !oldOpenPackages.__v160History){
+    window.openPackagesModal = function(){
+      const r = oldOpenPackages.apply(this, arguments);
+      setTimeout(markPackagePositionLinks, 100);
+      setTimeout(markPackagePositionLinks, 500);
+      return r;
+    };
+    window.openPackagesModal.__v160History = true;
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(markPackagePositionLinks, 800);
+  });
+})();
+</script>
+
+
+<script>
+/* ===== V161 PACKAGE HISTORY MATCH FIX ===== */
+(function(){
+
+  function escPH(v){
+    return String(v ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[s]));
+  }
+
+  function normPH(v){
+    return String(v || "")
+      .toLowerCase()
+      .replace(/\s+/g,"")
+      .replace(/сп$/i,"")
+      .trim();
+  }
+
+  function displayDatePH(v){
+    const d = new Date(v);
+    if(isNaN(d.getTime())) return v || "—";
+    return d.toLocaleString("uk-UA", {
+      day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"
+    }).replace(",", "");
+  }
+
+  function getPackageDatePH(p){
+    return p?.createdAt || p?.date || p?.time || p?.deliveredAt || p?.lastPackageAt || p?.updatedAt || p?.timestamp || "";
+  }
+
+  function getPackagePositionPH(p){
+    return p?.positionName || p?.position || p?.posName || p?.pos || p?.name || p?.positionTitle || "";
+  }
+
+  function getPackageTextPH(p){
+    return p?.text || p?.description || p?.note || p?.comment || p?.title || p?.type || p?.lastPackageText || "Посилка";
+  }
+
+  function getPackageQtyPH(p){
+    return p?.qty || p?.count || p?.amount || p?.people || p?.personnel || p?.soldiers || p?.persons || "";
+  }
+
+  function collectAllPackageRecordsPH(){
+    const out = [];
+
+    function pushRecord(p, source){
+      if(!p) return;
+      out.push({
+        source,
+        raw:p,
+        position:getPackagePositionPH(p),
+        date:getPackageDatePH(p),
+        text:getPackageTextPH(p),
+        qty:getPackageQtyPH(p),
+        status:p.status || p.state || p.result || p.zone || "—",
+        user:p.createdByName || p.createdBy || p.user || p.author || "—"
+      });
+    }
+
+    // 1. Основний масив посилок, якщо є
+    (state?.packages || []).forEach(p => pushRecord(p, "packages"));
+
+    // 2. Якщо посилки зберігаються всередині позицій
+    (state?.positions || []).forEach(pos => {
+      const posName = pos.name || "";
+
+      (pos.packages || pos.packageHistory || pos.parcels || pos.parcelHistory || []).forEach(p => {
+        pushRecord({
+          ...p,
+          positionName:p.positionName || p.position || posName
+        }, "position.packages");
+      });
+
+      // 3. Якщо є тільки остання посилка в самій позиції
+      const last = pos.lastPackageAt || pos.lastPackage || pos.packageDate || pos.lastParcelAt;
+      if(last){
+        pushRecord({
+          positionName:posName,
+          date:last,
+          text:pos.lastPackageText || pos.packageText || pos.lastParcelText || "Остання посилка",
+          qty:pos.people || pos.personnel || pos.count || "",
+          status:pos.packageStatus || pos.status || "—",
+          createdBy:pos.packageCreatedBy || pos.updatedBy || pos.createdBy || "—"
+        }, "position.last");
+      }
+    });
+
+    // 4. Події типу посилка в журналі подій
+    (state?.events || []).forEach(e => {
+      const txt = `${e.type || ""} ${e.text || ""} ${e.message || ""} ${e.description || ""}`.toLowerCase();
+      if(txt.includes("посил")){
+        pushRecord({
+          positionName:e.positionName || e.position || e.pos || "",
+          date:e.createdAt || e.date || e.time || e.ts,
+          text:e.text || e.message || e.description || e.type || "Посилка",
+          qty:e.qty || e.count || "",
+          status:e.status || "Подія",
+          createdBy:e.createdByName || e.createdBy || e.user || e.author || "—"
+        }, "events");
+      }
+    });
+
+    return out;
+  }
+
+  function rowsForPositionPH(posName){
+    const n = normPH(posName);
+    return collectAllPackageRecordsPH()
+      .filter(r => {
+        const rp = normPH(r.position);
+        const hay = normPH(`${r.position} ${r.text}`);
+        return rp === n || rp.includes(n) || n.includes(rp) || hay.includes(n);
+      })
+      .sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  }
+
+  window.openPackageHistoryModal = function(posName){
+    const modal = document.getElementById("packageHistoryModal");
+    const title = document.getElementById("packageHistoryTitle");
+    const body = document.getElementById("packageHistoryBody");
+
+    if(!modal || !body) return;
+
+    const rows = rowsForPositionPH(posName);
+
+    title.textContent = "Історія посилок: " + posName;
+
+    const latest = rows[0] ? displayDatePH(rows[0].date) : "—";
+    const totalQty = rows.reduce((sum,r)=>{
+      const n = Number(r.qty);
+      return sum + (isFinite(n) ? n : 0);
+    },0);
+
+    body.innerHTML = `
+      <div class="package-history-summary">
+        <div class="package-history-card"><b>${rows.length}</b><span>Усього записів посилок</span></div>
+        <div class="package-history-card"><b>${totalQty || "—"}</b><span>Кількість / В/С, якщо вказано</span></div>
+        <div class="package-history-card"><b>${escPH(latest)}</b><span>Остання посилка</span></div>
+      </div>
+
+      ${rows.length ? `
+        <table class="package-history-table">
+          <thead>
+            <tr>
+              <th>Дата / час</th>
+              <th>Посилка / опис</th>
+              <th>К-сть</th>
+              <th>Статус</th>
+              <th>Хто створив</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r=>`
+              <tr>
+                <td>${escPH(displayDatePH(r.date))}</td>
+                <td>${escPH(r.text)}</td>
+                <td>${escPH(r.qty || "—")}</td>
+                <td>${escPH(r.status || "—")}</td>
+                <td>${escPH(r.user || "—")}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      ` : `
+        <div class="empty">
+          По цій позиції історії посилок немає.<br>
+          <span class="meta">Якщо в загальній таблиці видно дату останньої посилки, вона може бути збережена тільки як підсумковий стан позиції без детальної історії.</span>
+        </div>
+      `}
+    `;
+
+    modal.classList.add("show");
+  };
+
+  function markPackageLinksPH(){
+    const modal = document.getElementById("packagesModal");
+    if(!modal || !modal.classList.contains("show")) return;
+
+    modal.querySelectorAll("table tbody tr").forEach(row=>{
+      const firstTd = row.children?.[0];
+      if(!firstTd) return;
+
+      const current = firstTd.querySelector(".package-position-link");
+      if(current) return;
+
+      const text = firstTd.textContent.trim();
+      const firstLine = text.split(/\n/)[0].trim();
+      if(!firstLine || firstLine === "—") return;
+
+      const typeLine = firstTd.querySelector(".meta")?.outerHTML || "";
+      firstTd.innerHTML = `<span class="package-position-link" data-package-pos="${escPH(firstLine)}">${escPH(firstLine)}</span>${typeLine ? "<br>"+typeLine : ""}`;
+    });
+  }
+
+  const oldRenderPackagesV161 = window.renderPackagesModal;
+  if(typeof oldRenderPackagesV161 === "function" && !oldRenderPackagesV161.__v161patched){
+    window.renderPackagesModal = function(){
+      const r = oldRenderPackagesV161.apply(this, arguments);
+      setTimeout(markPackageLinksPH, 50);
+      return r;
+    };
+    window.renderPackagesModal.__v161patched = true;
+  }
+
+  const oldOpenPackagesV161 = window.openPackagesModal;
+  if(typeof oldOpenPackagesV161 === "function" && !oldOpenPackagesV161.__v161patched){
+    window.openPackagesModal = function(){
+      const r = oldOpenPackagesV161.apply(this, arguments);
+      setTimeout(markPackageLinksPH, 100);
+      setTimeout(markPackageLinksPH, 500);
+      return r;
+    };
+    window.openPackagesModal.__v161patched = true;
+  }
+
+  document.addEventListener("click", function(e){
+    const link = e.target.closest(".package-position-link");
+    if(!link) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const pos = link.dataset.packagePos || link.textContent.trim();
+    openPackageHistoryModal(pos);
   }, true);
 
 })();
