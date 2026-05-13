@@ -3597,6 +3597,17 @@ tbody td.coord-clickable *{
   font-weight:700!important;
 }
 
+
+/* ===== V169 ADMIN ONLY CLEAR JOURNAL ===== */
+.clear-journal-hidden{
+  display:none!important;
+}
+.clear-journal-disabled{
+  opacity:.45!important;
+  pointer-events:none!important;
+  filter:grayscale(1)!important;
+}
+
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -12737,6 +12748,100 @@ document.addEventListener("DOMContentLoaded",()=>setTimeout(markLinks,1000));
     fixAnalyticsPositionCells();
   });
   obs.observe(document.body, {childList:true, subtree:true});
+})();
+</script>
+
+
+<script>
+/* ===== V169 ADMIN ONLY CLEAR JOURNAL ===== */
+(function(){
+
+  function currentUserIsAdminV169(){
+    try{
+      const u = window.currentUser || window.authUser || {};
+      const role =
+        window.currentRole ||
+        state?.currentRole ||
+        u.role ||
+        u.claims?.role ||
+        u.customClaims?.role ||
+        "";
+
+      const nameText =
+        document.body.innerText.match(/([a-zA-Z0-9._-]+)\s*-\s*вийти/)?.[1] ||
+        "";
+
+      return (
+        String(role).toLowerCase() === "admin" ||
+        String(u.email || "").toLowerCase().includes("admin") ||
+        String(nameText || "").toLowerCase() === "admin"
+      );
+    }catch(e){
+      return false;
+    }
+  }
+
+  function findClearJournalButtonsV169(){
+    return Array.from(document.querySelectorAll("button"))
+      .filter(btn => /очистити журнал/i.test(btn.textContent || ""));
+  }
+
+  function protectClearJournalButtonV169(){
+    const isAdmin = currentUserIsAdminV169();
+
+    findClearJournalButtonsV169().forEach(btn => {
+      if(isAdmin){
+        btn.classList.remove("clear-journal-hidden", "clear-journal-disabled");
+        btn.disabled = false;
+        btn.title = "";
+      }else{
+        btn.classList.add("clear-journal-hidden");
+        btn.disabled = true;
+        btn.title = "Очистити журнал може лише адмін";
+      }
+    });
+  }
+
+  // Блокуємо дію навіть якщо кнопку хтось покаже через DevTools.
+  document.addEventListener("click", function(e){
+    const btn = e.target.closest("button");
+    if(!btn) return;
+
+    if(!/очистити журнал/i.test(btn.textContent || "")) return;
+
+    if(!currentUserIsAdminV169()){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      alert("Очистити журнал може лише адмін.");
+      return false;
+    }
+  }, true);
+
+  // Перехоплюємо можливі функції очищення журналу.
+  ["clearJournal","clearLog","clearEvents","deleteAllEvents","clearEventLog"].forEach(function(fnName){
+    const oldFn = window[fnName];
+    if(typeof oldFn === "function" && !oldFn.__adminOnlyV169){
+      window[fnName] = function(){
+        if(!currentUserIsAdminV169()){
+          alert("Очистити журнал може лише адмін.");
+          return;
+        }
+        return oldFn.apply(this, arguments);
+      };
+      window[fnName].__adminOnlyV169 = true;
+    }
+  });
+
+  const observer = new MutationObserver(protectClearJournalButtonV169);
+  observer.observe(document.body, {childList:true, subtree:true});
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(protectClearJournalButtonV169, 300);
+    setTimeout(protectClearJournalButtonV169, 1000);
+  });
+
+  setTimeout(protectClearJournalButtonV169, 500);
 })();
 </script>
 
