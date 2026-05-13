@@ -3535,6 +3535,68 @@ tbody td.coord-clickable *{
 .package-history-table th{background:#20384c!important;}
 @media(max-width:800px){.package-history-summary{grid-template-columns:1fr!important;}}
 
+
+/* ===== V165 JOURNAL ONLY CONNECTION FILTER FIX ===== */
+.journal-connection-filter{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  font-weight:900!important;
+  cursor:pointer!important;
+  margin-left:18px!important;
+  color:#fff!important;
+}
+.journal-connection-filter input{
+  width:18px!important;
+  height:18px!important;
+  accent-color:#f8c943!important;
+}
+
+
+/* ===== V166 ANALYTICS POSITION POPUP ===== */
+.analytics-position-link{cursor:pointer!important;color:#8fe3ff!important;font-weight:900!important;text-decoration:none!important}
+.analytics-position-link:hover{color:#f8c943!important}
+#positionAnalyticsPopupModal.show{display:flex!important;z-index:99200!important}
+#positionAnalyticsPopupModal .modal{z-index:99201!important;width:min(1150px,95vw)!important;max-height:92vh!important;overflow:hidden!important;display:flex!important;flex-direction:column!important}
+#positionAnalyticsPopupModal .modal-body{overflow:auto!important}
+.position-analytics-filter{display:flex!important;gap:10px!important;align-items:center!important;flex-wrap:wrap!important;padding:12px!important;border:1px solid var(--line)!important;border-radius:12px!important;background:#0e1c27!important;margin-bottom:12px!important}
+.position-analytics-filter label{display:flex!important;align-items:center!important;gap:6px!important;font-weight:900!important}
+.position-analytics-filter input[type="date"]{width:165px!important}
+.position-popup-grid{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:10px!important;margin-bottom:12px!important}
+.position-popup-card{background:#0e1c27!important;border:1px solid var(--line)!important;border-radius:12px!important;padding:12px!important}
+.position-popup-card b{display:block!important;font-size:24px!important;margin-bottom:4px!important}
+.position-popup-card span{color:var(--muted)!important;font-size:12px!important}
+.position-popup-table{width:100%!important;border-collapse:collapse!important;table-layout:fixed!important}
+.position-popup-table th,.position-popup-table td{border:1px solid var(--line)!important;padding:9px!important;vertical-align:top!important;font-size:13px!important;line-height:1.35!important;white-space:normal!important;overflow-wrap:anywhere!important}
+.position-popup-table th{background:#20384c!important}
+@media(max-width:900px){.position-popup-grid{grid-template-columns:repeat(2,1fr)!important}}
+@media(max-width:600px){.position-popup-grid{grid-template-columns:1fr!important}}
+
+
+/* ===== V168 ANALYTICS POSITION COLUMN LINES FIX ===== */
+.analytics-pos-cell{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:4px!important;
+  line-height:1.25!important;
+}
+.analytics-pos-name{
+  color:#8fe3ff!important;
+  font-size:16px!important;
+  font-weight:900!important;
+  cursor:pointer!important;
+}
+.analytics-pos-coords{
+  color:#d7f3ff!important;
+  font-size:13px!important;
+  font-weight:800!important;
+}
+.analytics-pos-place{
+  color:#9fb7c8!important;
+  font-size:12px!important;
+  font-weight:700!important;
+}
+
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -11929,6 +11991,752 @@ console.log("Firebase Auth + Roles initialized");
     openPackageHistoryModal(pos);
   }, true);
 
+})();
+</script>
+
+
+<script>
+/* ===== V162 PACKAGE HISTORY: QTY / USER / DELETE SYNC ===== */
+(function(){
+  function escV162(v){return String(v ?? "").replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[s]));}
+  function normV162(v){return String(v||"").toLowerCase().replace(/\s+/g,"").replace(/сп$/i,"").trim();}
+  function fmtDateV162(v){
+    const d=new Date(v);
+    if(isNaN(d.getTime())) return v || "—";
+    return d.toLocaleString("uk-UA",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}).replace(",","");
+  }
+  function getPosByNameV162(posName){
+    const n=normV162(posName);
+    return (state?.positions||[]).find(p=>normV162(p.name)===n || n.includes(normV162(p.name)) || normV162(p.name).includes(n));
+  }
+  function getPeopleCountV162(posName){
+    const p=getPosByNameV162(posName);
+    if(!p) return "";
+    const direct=p.peopleCount ?? p.personnelCount ?? p.soldiersCount ?? p.personCount ?? p.count ?? "";
+    if(direct!=="" && direct!==undefined && direct!==null && !isNaN(Number(direct))) return direct;
+    if(Array.isArray(p.people)) return p.people.length;
+    if(Array.isArray(p.personnel)) return p.personnel.length;
+    if(Array.isArray(p.persons)) return p.persons.length;
+    return "";
+  }
+  function primitiveV162(v){
+    if(v===null || v===undefined || v==="") return "";
+    if(typeof v==="string" || typeof v==="number") return v;
+    if(Array.isArray(v)) return v.length;
+    if(typeof v==="object"){
+      for(const k of ["qty","count","amount","people","personnel","soldiers","persons","value","total","name","email","displayName","uid"]){
+        if(v[k]!==undefined && v[k]!==null && v[k]!=="" && typeof v[k]!=="object") return v[k];
+      }
+      return "";
+    }
+    return "";
+  }
+  function getQtyV162(p,posName){
+    const q=primitiveV162(p?.qty ?? p?.count ?? p?.amount ?? p?.peopleQty ?? p?.personnelQty ?? p?.soldiersQty ?? p?.personsQty ?? p?.peopleCount ?? p?.personnelCount);
+    return q!=="" ? q : getPeopleCountV162(posName);
+  }
+  function getUserV162(p){
+    const u=p?.createdByName ?? p?.createdBy ?? p?.createdUser ?? p?.createdByUser ?? p?.userName ?? p?.username ?? p?.user ?? p?.author ?? p?.updatedBy ?? "";
+    if(typeof u==="string" || typeof u==="number") return u || "—";
+    if(typeof u==="object" && u) return u.displayName || u.name || u.email || u.uid || "—";
+    return "—";
+  }
+  function getDateV162(p){return p?.createdAt || p?.date || p?.time || p?.deliveredAt || p?.updatedAt || p?.timestamp || "";}
+  function getPositionV162(p){return p?.positionName || p?.position || p?.posName || p?.pos || p?.positionTitle || "";}
+  function getTextV162(p){return p?.text || p?.message || p?.description || p?.note || p?.comment || p?.title || p?.type || "Посилка";}
+  function isPackageEventV162(e){
+    const txt=`${e?.type||""} ${e?.text||""} ${e?.message||""} ${e?.description||""}`.toLowerCase();
+    return txt.includes("посил");
+  }
+  function collectRowsV162(posName){
+    const n=normV162(posName);
+    const rows=[];
+    function match(p){
+      const rp=normV162(getPositionV162(p));
+      const hay=normV162(`${getPositionV162(p)} ${getTextV162(p)}`);
+      return rp===n || rp.includes(n) || n.includes(rp) || hay.includes(n);
+    }
+    function push(p,source){
+      if(!p || !match(p)) return;
+      rows.push({
+        id:p.id || p.eventId || p.packageId || "",
+        source,
+        date:getDateV162(p),
+        text:getTextV162(p),
+        qty:getQtyV162(p,posName),
+        status:p.status || p.state || p.result || (source==="events" ? "Подія" : "—"),
+        user:getUserV162(p)
+      });
+    }
+    (state?.packages||[]).forEach(p=>push(p,"packages"));
+    const pos=getPosByNameV162(posName);
+    if(pos){
+      (pos.packages || pos.packageHistory || pos.parcels || pos.parcelHistory || []).forEach(p=>{
+        push({...p, positionName:p.positionName || p.position || pos.name}, "position.history");
+      });
+    }
+    (state?.events||[]).forEach(e=>{
+      if(!isPackageEventV162(e)) return;
+      push({
+        ...e,
+        positionName:e.positionName || e.position || e.pos || posName,
+        date:e.createdAt || e.date || e.time || e.ts || e.timestamp,
+        status:e.status || "Подія",
+        createdBy:e.createdByName || e.createdBy || e.user || e.author || e.createdUser
+      },"events");
+    });
+    const seen=new Set();
+    return rows.filter(r=>{
+      const key=`${fmtDateV162(r.date)}|${normV162(r.text)}|${r.qty}|${r.user}`;
+      if(seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  }
+
+  window.openPackageHistoryModal=function(posName){
+    const modal=document.getElementById("packageHistoryModal");
+    const title=document.getElementById("packageHistoryTitle");
+    const body=document.getElementById("packageHistoryBody");
+    if(!modal || !body) return;
+    const rows=collectRowsV162(posName);
+    title.textContent="Історія посилок: "+posName;
+    const latest=rows[0]?fmtDateV162(rows[0].date):"—";
+    const totalQty=rows.reduce((sum,r)=>{const n=Number(r.qty); return sum+(isFinite(n)?n:0);},0);
+    body.innerHTML=`
+      <div class="package-history-summary">
+        <div class="package-history-card"><b>${rows.length}</b><span>Усього записів посилок</span></div>
+        <div class="package-history-card"><b>${totalQty || "—"}</b><span>Кількість / В/С</span></div>
+        <div class="package-history-card"><b>${escV162(latest)}</b><span>Остання посилка</span></div>
+      </div>
+      ${rows.length ? `
+        <table class="package-history-table">
+          <thead><tr><th>Дата / час</th><th>Посилка / опис</th><th>К-сть В/С</th><th>Статус</th><th>Хто створив</th></tr></thead>
+          <tbody>${rows.map(r=>`
+            <tr>
+              <td>${escV162(fmtDateV162(r.date))}</td>
+              <td>${escV162(r.text)}</td>
+              <td>${escV162(r.qty || "—")}</td>
+              <td>${escV162(r.status || "—")}</td>
+              <td>${escV162(r.user || "—")}</td>
+            </tr>`).join("")}</tbody>
+        </table>` : `<div class="empty">По цій позиції історії посилок немає.</div>`}
+    `;
+    modal.classList.add("show");
+  };
+
+  const oldDeleteLogV162=window.deleteLog;
+  if(typeof oldDeleteLogV162==="function" && !oldDeleteLogV162.__v162packageSync){
+    window.deleteLog=function(){
+      const result=oldDeleteLogV162.apply(this,arguments);
+      setTimeout(()=>{
+        const title=document.getElementById("packageHistoryTitle")?.textContent || "";
+        const m=title.match(/Історія посилок:\s*(.+)$/);
+        if(m && document.getElementById("packageHistoryModal")?.classList.contains("show")){
+          openPackageHistoryModal(m[1].trim());
+        }
+      },150);
+      return result;
+    };
+    window.deleteLog.__v162packageSync=true;
+  }
+})();
+</script>
+
+
+<script>
+/* ===== V163 PACKAGE HISTORY: DO NOT SUM PERSONNEL ===== */
+(function(){
+  const oldOpenPackageHistoryModal = window.openPackageHistoryModal;
+
+  function escV163(v){
+    return String(v ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[s]));
+  }
+
+  function normV163(v){
+    return String(v || "").toLowerCase().replace(/\s+/g,"").replace(/сп$/i,"").trim();
+  }
+
+  function fmtDateV163(v){
+    const d = new Date(v);
+    if(isNaN(d.getTime())) return v || "—";
+    return d.toLocaleString("uk-UA", {
+      day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"
+    }).replace(",", "");
+  }
+
+  function getPosByNameV163(posName){
+    const n = normV163(posName);
+    return (state?.positions || []).find(p =>
+      normV163(p.name) === n ||
+      n.includes(normV163(p.name)) ||
+      normV163(p.name).includes(n)
+    );
+  }
+
+  function positionPeopleCountV163(posName){
+    const p = getPosByNameV163(posName);
+    if(!p) return "";
+
+    const direct =
+      p.peopleCount ?? p.personnelCount ?? p.soldiersCount ?? p.personCount ??
+      p.count ?? "";
+
+    if(direct !== "" && direct !== undefined && direct !== null && !isNaN(Number(direct))){
+      return direct;
+    }
+
+    if(Array.isArray(p.people)) return p.people.length;
+    if(Array.isArray(p.personnel)) return p.personnel.length;
+    if(Array.isArray(p.persons)) return p.persons.length;
+
+    return "";
+  }
+
+  function getDateV163(p){
+    return p?.createdAt || p?.date || p?.time || p?.deliveredAt || p?.updatedAt || p?.timestamp || "";
+  }
+
+  function getPositionV163(p){
+    return p?.positionName || p?.position || p?.posName || p?.pos || p?.positionTitle || "";
+  }
+
+  function getTextV163(p){
+    return p?.text || p?.message || p?.description || p?.note || p?.comment || p?.title || p?.type || "Посилка";
+  }
+
+  function getUserV163(p){
+    const u = p?.createdByName ?? p?.createdBy ?? p?.createdUser ?? p?.createdByUser ?? p?.userName ?? p?.username ?? p?.user ?? p?.author ?? p?.updatedBy ?? "";
+    if(typeof u === "string" || typeof u === "number") return u || "—";
+    if(typeof u === "object" && u) return u.displayName || u.name || u.email || u.uid || "—";
+    return "—";
+  }
+
+  function isPackageEventV163(e){
+    const txt = `${e?.type || ""} ${e?.text || ""} ${e?.message || ""} ${e?.description || ""}`.toLowerCase();
+    return txt.includes("посил");
+  }
+
+  function collectRowsV163(posName){
+    const n = normV163(posName);
+    const rows = [];
+    const positionCount = positionPeopleCountV163(posName);
+
+    function match(p){
+      const rp = normV163(getPositionV163(p));
+      const hay = normV163(`${getPositionV163(p)} ${getTextV163(p)}`);
+      return rp === n || rp.includes(n) || n.includes(rp) || hay.includes(n);
+    }
+
+    function push(p, source){
+      if(!p || !match(p)) return;
+      rows.push({
+        id:p.id || p.eventId || p.packageId || "",
+        source,
+        date:getDateV163(p),
+        text:getTextV163(p),
+        // В/С — це кількість на позиції, не сума по всіх посилках
+        qty:positionCount || p.qty || p.count || p.peopleCount || p.personnelCount || "—",
+        status:p.status || p.state || p.result || (source === "events" ? "Подія" : "—"),
+        user:getUserV163(p)
+      });
+    }
+
+    (state?.packages || []).forEach(p => push(p, "packages"));
+
+    const pos = getPosByNameV163(posName);
+    if(pos){
+      (pos.packages || pos.packageHistory || pos.parcels || pos.parcelHistory || []).forEach(p => {
+        push({...p, positionName:p.positionName || p.position || pos.name}, "position.history");
+      });
+    }
+
+    (state?.events || []).forEach(e => {
+      if(!isPackageEventV163(e)) return;
+      push({
+        ...e,
+        positionName:e.positionName || e.position || e.pos || posName,
+        date:e.createdAt || e.date || e.time || e.ts || e.timestamp,
+        status:e.status || "Подія",
+        createdBy:e.createdByName || e.createdBy || e.user || e.author || e.createdUser
+      }, "events");
+    });
+
+    const seen = new Set();
+    return rows.filter(r => {
+      const key = `${fmtDateV163(r.date)}|${normV163(r.text)}`;
+      if(seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).sort((a,b)=>new Date(b.date || 0)-new Date(a.date || 0));
+  }
+
+  window.openPackageHistoryModal = function(posName){
+    const modal = document.getElementById("packageHistoryModal");
+    const title = document.getElementById("packageHistoryTitle");
+    const body = document.getElementById("packageHistoryBody");
+    if(!modal || !body) return;
+
+    const rows = collectRowsV163(posName);
+    const positionCount = positionPeopleCountV163(posName) || (rows.find(r => r.qty && r.qty !== "—")?.qty) || "—";
+
+    title.textContent = "Історія посилок: " + posName;
+
+    const latest = rows[0] ? fmtDateV163(rows[0].date) : "—";
+
+    body.innerHTML = `
+      <div class="package-history-summary">
+        <div class="package-history-card"><b>${rows.length}</b><span>Усього записів посилок</span></div>
+        <div class="package-history-card"><b>${escV163(positionCount)}</b><span>Кількість В/С на позиції</span></div>
+        <div class="package-history-card"><b>${escV163(latest)}</b><span>Остання посилка</span></div>
+      </div>
+
+      ${rows.length ? `
+        <table class="package-history-table">
+          <thead>
+            <tr>
+              <th>Дата / час</th>
+              <th>Посилка / опис</th>
+              <th>К-сть В/С</th>
+              <th>Статус</th>
+              <th>Хто створив</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r=>`
+              <tr>
+                <td>${escV163(fmtDateV163(r.date))}</td>
+                <td>${escV163(r.text)}</td>
+                <td>${escV163(r.qty || positionCount || "—")}</td>
+                <td>${escV163(r.status || "—")}</td>
+                <td>${escV163(r.user || "—")}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      ` : `<div class="empty">По цій позиції історії посилок немає.</div>`}
+    `;
+
+    modal.classList.add("show");
+  };
+})();
+</script>
+
+
+<script>
+/* ===== V164 JOURNAL FILTER: ONLY CONNECTION ===== */
+(function(){
+
+function addConnectionFilterV164(){
+    const journal = document.querySelector('#journalModal, .journal-modal, .modal-journal');
+    if(!journal) return;
+
+    const filtersRow = Array.from(journal.querySelectorAll('div')).find(el =>
+        el.textContent && el.textContent.includes('Лише бойові події')
+    );
+
+    if(!filtersRow) return;
+    if(document.getElementById('filterOnlyConnectionV164')) return;
+
+    const label = document.createElement('label');
+    label.style.display = 'inline-flex';
+    label.style.alignItems = 'center';
+    label.style.gap = '8px';
+    label.style.marginLeft = '18px';
+    label.style.fontWeight = '700';
+    label.style.cursor = 'pointer';
+    label.innerHTML = `
+        <input type="checkbox" id="filterOnlyConnectionV164">
+        Лише зв'язок
+    `;
+
+    filtersRow.appendChild(label);
+
+    const cb = label.querySelector('input');
+
+    cb.addEventListener('change', () => {
+        applyConnectionFilterV164();
+    });
+}
+
+function isConnectionTextV164(text){
+    text = String(text || '').toLowerCase();
+    return (
+        text.includes('зв\'яз') ||
+        text.includes('відновлено') ||
+        text.includes('втрачено зв') ||
+        text.includes('нема зв') ||
+        text.includes('не на зв')
+    );
+}
+
+function applyConnectionFilterV164(){
+    const enabled = document.getElementById('filterOnlyConnectionV164')?.checked;
+
+    const items = document.querySelectorAll(
+        '#journalModal .log-item, #journalModal .journal-item, #journalModal .event-item'
+    );
+
+    items.forEach(item => {
+        const txt = item.innerText || item.textContent || '';
+
+        if(enabled){
+            item.style.display = isConnectionTextV164(txt) ? '' : 'none';
+        } else {
+            item.style.display = '';
+        }
+    });
+}
+
+const observer = new MutationObserver(() => {
+    addConnectionFilterV164();
+});
+
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
+
+setTimeout(addConnectionFilterV164, 1000);
+
+})();
+</script>
+
+
+<script>
+/* ===== V165 JOURNAL ONLY CONNECTION FILTER FIX ===== */
+(function(){
+
+  function isConnectionEventText(txt){
+    txt = String(txt || "").toLowerCase();
+    return (
+      txt.includes("зв'яз") ||
+      txt.includes("зв’яз") ||
+      txt.includes("звяз") ||
+      txt.includes("відновлено") ||
+      txt.includes("втрачено") ||
+      txt.includes("не на зв") ||
+      txt.includes("нема зв") ||
+      txt.includes("без зв")
+    );
+  }
+
+  function getJournalRoot(){
+    return document.getElementById("logPanel") ||
+           document.getElementById("journalModal") ||
+           document.querySelector(".journal-modal") ||
+           document.querySelector(".modal:has(#log)") ||
+           document.body;
+  }
+
+  function findFilterLine(){
+    const root = getJournalRoot();
+
+    const labels = Array.from(root.querySelectorAll("label"));
+    const existingLabel = labels.find(l =>
+      /Лише посилки|Лише бойові|Сховати втрату/i.test(l.textContent || "")
+    );
+
+    if(existingLabel){
+      return existingLabel.parentElement;
+    }
+
+    const candidates = Array.from(root.querySelectorAll("div,section"));
+    return candidates.find(el =>
+      /Лише бойові події/i.test(el.textContent || "") ||
+      /Лише посилки/i.test(el.textContent || "") ||
+      /Сховати втрату/i.test(el.textContent || "")
+    );
+  }
+
+  function ensureConnectionCheckbox(){
+    if(document.getElementById("onlyConnectionFilter")) return;
+
+    const line = findFilterLine();
+    if(!line) return;
+
+    const label = document.createElement("label");
+    label.className = "journal-connection-filter";
+    label.innerHTML = '<input type="checkbox" id="onlyConnectionFilter"> Лише звʼязок';
+
+    line.appendChild(label);
+
+    const cb = document.getElementById("onlyConnectionFilter");
+    cb.addEventListener("change", function(){
+      // вимикаємо інші "лише..." фільтри, щоб не конфліктували
+      if(cb.checked){
+        ["onlyCombatFilter","onlyPackagesFilter","onlyPackageFilter","filterOnlyPackages"].forEach(id=>{
+          const el = document.getElementById(id);
+          if(el && el !== cb) el.checked = false;
+        });
+      }
+
+      if(typeof renderLog === "function"){
+        try{ renderLog(); }catch(e){}
+      }
+
+      setTimeout(applyConnectionFilter, 50);
+    });
+  }
+
+  function getJournalItems(){
+    const root = getJournalRoot();
+
+    let items = Array.from(root.querySelectorAll(
+      ".logitem, .log-item, .journal-item, .event-item, #log > div"
+    ));
+
+    // fallback: прямі діти списку журналу
+    if(!items.length){
+      const log = document.getElementById("log");
+      if(log) items = Array.from(log.children);
+    }
+
+    return items.filter(el => el && el.textContent && el.offsetParent !== null);
+  }
+
+  function applyConnectionFilter(){
+    const enabled = document.getElementById("onlyConnectionFilter")?.checked;
+    const items = getJournalItems();
+
+    items.forEach(item => {
+      if(!enabled){
+        item.style.display = "";
+        return;
+      }
+
+      const txt = item.innerText || item.textContent || "";
+      item.style.display = isConnectionEventText(txt) ? "" : "none";
+    });
+  }
+
+  // Patch renderLog so filter applies after journal redraw
+  function patchRenderLog(){
+    if(typeof window.renderLog === "function" && !window.renderLog.__v165ConnectionPatched){
+      const old = window.renderLog;
+      window.renderLog = function(){
+        const result = old.apply(this, arguments);
+        setTimeout(function(){
+          ensureConnectionCheckbox();
+          applyConnectionFilter();
+        }, 50);
+        return result;
+      };
+      window.renderLog.__v165ConnectionPatched = true;
+    }
+  }
+
+  // Patch open journal functions
+  ["openLog","openJournal","toggleLog","showJournal"].forEach(name=>{
+    const fn = window[name];
+    if(typeof fn === "function" && !fn.__v165ConnectionPatched){
+      window[name] = function(){
+        const result = fn.apply(this, arguments);
+        setTimeout(function(){
+          ensureConnectionCheckbox();
+          patchRenderLog();
+          applyConnectionFilter();
+        }, 150);
+        return result;
+      };
+      window[name].__v165ConnectionPatched = true;
+    }
+  });
+
+  document.addEventListener("DOMContentLoaded", function(){
+    patchRenderLog();
+    setTimeout(ensureConnectionCheckbox, 500);
+    setTimeout(applyConnectionFilter, 700);
+  });
+
+  const obs = new MutationObserver(function(){
+    ensureConnectionCheckbox();
+    patchRenderLog();
+    applyConnectionFilter();
+  });
+
+  obs.observe(document.body, {childList:true, subtree:true});
+
+})();
+</script>
+
+
+<div class="modal-backdrop" id="positionAnalyticsPopupModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="positionAnalyticsPopupTitle">Аналітика позиції</div>
+      <button class="red small" type="button" onclick="closePositionAnalyticsPopup()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="position-analytics-filter">
+        <label>Від <input type="date" id="posAnalyticsFrom"></label>
+        <label>До <input type="date" id="posAnalyticsTo"></label>
+        <button class="green" type="button" onclick="renderPositionAnalyticsPopup()">Показати</button>
+        <button class="blue" type="button" onclick="setPositionAnalyticsAllTime()">За весь час</button>
+      </div>
+      <div id="positionAnalyticsPopupBody"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ===== V166 ANALYTICS POSITION POPUP ===== */
+(function(){
+window.__currentPositionAnalyticsName="";
+function escPA(v){return String(v??"").replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[s]));}
+function normPA(v){return String(v||"").toLowerCase().replace(/\s+/g,"").replace(/сп$/i,"").trim();}
+function eventDatePA(e){return e?.createdAt||e?.date||e?.time||e?.ts||e?.timestamp||"";}
+function parseDatePA(v){const d=new Date(v);return isNaN(d.getTime())?null:d;}
+function fmtPA(v){const d=parseDatePA(v);if(!d)return v||"—";return d.toLocaleString("uk-UA",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}).replace(",","");}
+function inputDatePA(d){const z=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;}
+function posNamePA(e){return e?.positionName||e?.position||e?.pos||e?.name||"";}
+function textPA(e){return e?.text||e?.message||e?.description||e?.type||"";}
+function isConnPA(e){const t=`${e?.type||""} ${textPA(e)}`.toLowerCase();return t.includes("зв'яз")||t.includes("зв’яз")||t.includes("відновлено")||t.includes("втрачено")||t.includes("без зв")||t.includes("нема зв");}
+function isPackPA(e){const t=`${e?.type||""} ${textPA(e)}`.toLowerCase();return t.includes("посил");}
+function isCombatPA(e){return !isConnPA(e)&&!isPackPA(e);}
+function typePA(e){const t=`${e?.type||""} ${textPA(e)}`.toLowerCase(); if(t.includes("fpv")||t.includes("фпв"))return"FPV"; if(t.includes("скид"))return"Скиди"; if(t.includes("міном")||t.includes("мином"))return"Міномет"; if(t.includes("арт"))return"Арт."; if(t.includes("рсзв"))return"РСЗВ"; if(t.includes("танк"))return"Танк"; if(t.includes("стріл")||t.includes("стрел"))return"Стріл."; if(t.includes("штурм"))return"Штурм"; if(isConnPA(e))return"Звʼязок"; if(isPackPA(e))return"Посилка"; return e?.type||"Інше";}
+function rowsPA(posName, all=false){
+ const n=normPA(posName), from=document.getElementById("posAnalyticsFrom")?.value||"", to=document.getElementById("posAnalyticsTo")?.value||"";
+ return (state?.events||[]).filter(e=>{
+   const p=normPA(posNamePA(e)), hay=normPA(`${posNamePA(e)} ${textPA(e)}`);
+   if(!(p===n||p.includes(n)||n.includes(p)||hay.includes(n)))return false;
+   if(all)return true;
+   const d=parseDatePA(eventDatePA(e));
+   if(d){ if(from&&d<new Date(from+"T00:00:00"))return false; if(to&&d>new Date(to+"T23:59:59"))return false; }
+   return true;
+ }).sort((a,b)=>new Date(eventDatePA(b)||0)-new Date(eventDatePA(a)||0));
+}
+window.setPositionAnalyticsAllTime=function(){
+ const dates=rowsPA(window.__currentPositionAnalyticsName,true).map(e=>parseDatePA(eventDatePA(e))).filter(Boolean);
+ if(dates.length)document.getElementById("posAnalyticsFrom").value=inputDatePA(new Date(Math.min(...dates.map(d=>d.getTime()))));
+ document.getElementById("posAnalyticsTo").value=inputDatePA(new Date());
+ renderPositionAnalyticsPopup();
+};
+window.renderPositionAnalyticsPopup=function(){
+ const body=document.getElementById("positionAnalyticsPopupBody"); if(!body)return;
+ const rows=rowsPA(window.__currentPositionAnalyticsName), combat=rows.filter(isCombatPA), conn=rows.filter(isConnPA), packs=rows.filter(isPackPA);
+ const c={fpv:rows.filter(e=>typePA(e)==="FPV").length,drops:rows.filter(e=>typePA(e)==="Скиди").length,mortar:rows.filter(e=>typePA(e)==="Міномет").length,art:rows.filter(e=>typePA(e)==="Арт.").length};
+ body.innerHTML=`<div class="position-popup-grid">
+ <div class="position-popup-card"><b>${rows.length}</b><span>Усього подій</span></div>
+ <div class="position-popup-card"><b>${combat.length}</b><span>Бойові події</span></div>
+ <div class="position-popup-card"><b>${conn.length}</b><span>Події звʼязку</span></div>
+ <div class="position-popup-card"><b>${packs.length}</b><span>Посилки</span></div>
+ <div class="position-popup-card"><b>${c.fpv}</b><span>FPV</span></div>
+ <div class="position-popup-card"><b>${c.drops}</b><span>Скиди</span></div>
+ <div class="position-popup-card"><b>${c.mortar}</b><span>Міномет</span></div>
+ <div class="position-popup-card"><b>${c.art}</b><span>Арт.</span></div></div>
+ ${rows.length?`<table class="position-popup-table"><thead><tr><th>Дата / час</th><th>Тип</th><th>Подія</th><th>Статус</th></tr></thead><tbody>${rows.map(e=>`<tr><td>${escPA(fmtPA(eventDatePA(e)))}</td><td>${escPA(typePA(e))}</td><td>${escPA(textPA(e))}</td><td>${escPA(e.status||(e.approved?"Підтв.":"—"))}</td></tr>`).join("")}</tbody></table>`:`<div class="empty">За вибраний період подій по цій позиції немає.</div>`}`;
+};
+window.openPositionAnalyticsPopup=function(posName){window.__currentPositionAnalyticsName=posName;document.getElementById("positionAnalyticsPopupTitle").textContent="Аналітика позиції: "+posName;document.getElementById("positionAnalyticsPopupModal").classList.add("show");setPositionAnalyticsAllTime();};
+window.closePositionAnalyticsPopup=function(){document.getElementById("positionAnalyticsPopupModal")?.classList.remove("show");};
+function markLinks(){
+ const modal=document.getElementById("analyticsModal"); if(!modal||!modal.classList.contains("show"))return;
+ modal.querySelectorAll("table tbody tr").forEach(row=>{const td=row.children?.[0]; if(!td||td.querySelector(".analytics-position-link"))return; const raw=td.textContent.trim(); const pos=raw.split(/\n/)[0].trim(); if(!pos||pos==="—")return; const rest=raw.replace(pos,"").trim(); td.innerHTML=`<span class="analytics-position-link" data-pos="${escPA(pos)}">${escPA(pos)}</span>${rest?`<div class="meta">${escPA(rest)}</div>`:""}`;});
+}
+document.addEventListener("click",e=>{const l=e.target.closest(".analytics-position-link"); if(!l)return; e.preventDefault();e.stopPropagation();openPositionAnalyticsPopup(l.dataset.pos||l.textContent.trim());},true);
+const ra=window.renderAnalytics;if(typeof ra==="function"&&!ra.__v166PositionLinks){window.renderAnalytics=function(){const r=ra.apply(this,arguments);setTimeout(markLinks,100);return r};window.renderAnalytics.__v166PositionLinks=true;}
+const oa=window.openAnalytics;if(typeof oa==="function"&&!oa.__v166PositionLinks){window.openAnalytics=function(){const r=oa.apply(this,arguments);setTimeout(markLinks,200);setTimeout(markLinks,700);return r};window.openAnalytics.__v166PositionLinks=true;}
+document.addEventListener("DOMContentLoaded",()=>setTimeout(markLinks,1000));
+})();
+</script>
+
+
+<script>
+/* ===== V168 ANALYTICS POSITION COLUMN LINES FIX ===== */
+(function(){
+  function esc168(v){
+    return String(v ?? "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[s]));
+  }
+
+  function splitPositionCellText(raw){
+    raw = String(raw || "").trim();
+
+    // Приклад з аналітики: "СОКРАТ37T BN 81555 90555 / н.п. РІВНЕ"
+    const m = raw.match(/^(.+?)(\d{1,2}[A-ZА-Я]\s+[A-ZА-Я]{2}\s+\d{4,6}\s+\d{4,6})(?:\s*\/\s*(.+))?$/i);
+
+    if(m){
+      return {
+        name: m[1].trim(),
+        coords: m[2].trim(),
+        place: (m[3] || "").trim()
+      };
+    }
+
+    // Якщо вже є переноси
+    const lines = raw.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+    if(lines.length >= 2){
+      return {
+        name: lines[0],
+        coords: lines[1],
+        place: lines.slice(2).join(" ")
+      };
+    }
+
+    return {
+      name: raw,
+      coords: "",
+      place: ""
+    };
+  }
+
+  function fixAnalyticsPositionCells(){
+    const modal = document.getElementById("analyticsModal");
+    if(!modal || !modal.classList.contains("show")) return;
+
+    const rows = modal.querySelectorAll("table tbody tr");
+
+    rows.forEach(row => {
+      const td = row.children && row.children[0];
+      if(!td || td.querySelector(".analytics-pos-cell")) return;
+
+      const parsed = splitPositionCellText(td.innerText || td.textContent);
+      if(!parsed.name) return;
+
+      td.innerHTML = `
+        <div class="analytics-pos-cell">
+          <div class="analytics-pos-name analytics-position-link" data-pos="${esc168(parsed.name)}">${esc168(parsed.name)}</div>
+          ${parsed.coords ? `<div class="analytics-pos-coords">${esc168(parsed.coords)}</div>` : ""}
+          ${parsed.place ? `<div class="analytics-pos-place">${esc168(parsed.place)}</div>` : ""}
+        </div>
+      `;
+    });
+  }
+
+  const oldRenderAnalytics = window.renderAnalytics;
+  if(typeof oldRenderAnalytics === "function" && !oldRenderAnalytics.__v168Lines){
+    window.renderAnalytics = function(){
+      const result = oldRenderAnalytics.apply(this, arguments);
+      setTimeout(fixAnalyticsPositionCells, 50);
+      setTimeout(fixAnalyticsPositionCells, 300);
+      return result;
+    };
+    window.renderAnalytics.__v168Lines = true;
+  }
+
+  const oldOpenAnalytics = window.openAnalytics;
+  if(typeof oldOpenAnalytics === "function" && !oldOpenAnalytics.__v168Lines){
+    window.openAnalytics = function(){
+      const result = oldOpenAnalytics.apply(this, arguments);
+      setTimeout(fixAnalyticsPositionCells, 100);
+      setTimeout(fixAnalyticsPositionCells, 500);
+      return result;
+    };
+    window.openAnalytics.__v168Lines = true;
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(fixAnalyticsPositionCells, 1000);
+  });
+
+  const obs = new MutationObserver(function(){
+    fixAnalyticsPositionCells();
+  });
+  obs.observe(document.body, {childList:true, subtree:true});
 })();
 </script>
 
